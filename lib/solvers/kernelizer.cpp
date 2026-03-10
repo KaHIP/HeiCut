@@ -19,13 +19,14 @@
 #include "lib/coarsening/label_propagation.h"
 #include "lib/parse_parameters/parse_parameters.h"
 #include "lib/coarsening/pruner.h"
+#ifdef USE_GUROBI
 #include "lib/solvers/ilp.h"
+#include "gurobi_c++.h"
+#endif
 #include "lib/solvers/submodular.h"
 // Mt-KaHyPar headers
 #include "mt-kahypar-library/libmtkahypar.h"
 #include "mt-kahypar/utils/cast.h"
-// Gurobi headers
-#include "gurobi_c++.h"
 // KaHIP headers
 #include "kahip/timer.h"
 
@@ -171,6 +172,7 @@ KernelizerResult Kernelizer::compute_mincut(StaticHypergraph &hypergraph, const 
     {
     case BaseSolver::ILP:
     {
+#ifdef USE_GUROBI
         try
         {
             // Create an environment
@@ -212,6 +214,9 @@ KernelizerResult Kernelizer::compute_mincut(StaticHypergraph &hypergraph, const 
             std::cerr << "Error code = " << e.getErrorCode() << std::endl;
             std::cerr << e.getMessage() << std::endl;
         }
+#else
+        std::cerr << "Error: ILP base solver requires Gurobi. Build with -DUSE_GUROBI=ON or use --base_solver=submodular." << std::endl;
+#endif
         break;
     }
     case BaseSolver::SUBMODULAR:

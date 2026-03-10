@@ -9,6 +9,7 @@ HeiCut
 [![ALENEX'26](https://img.shields.io/badge/ALENEX'26-10.1137/1.9781611978957.13-blue)](https://doi.org/10.1137/1.9781611978957.13)
 [![arXiv](https://img.shields.io/badge/arXiv-2504.19842-b31b1b.svg)](https://arxiv.org/abs/2504.19842)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17140472.svg)](https://doi.org/10.5281/zenodo.17140472)
+[![Homebrew](https://img.shields.io/badge/homebrew-available-orange)](https://github.com/KaHIP/homebrew-kahip)
 [![Heidelberg University](https://img.shields.io/badge/Heidelberg-University-c1002a)](https://www.uni-heidelberg.de)
 =====
 
@@ -27,6 +28,14 @@ HeiCut
 
 ## Quick Start
 
+### Install via Homebrew
+
+```bash
+brew install KaHIP/kahip/heicut
+```
+
+> **Note:** The Homebrew formula builds without Gurobi ILP support (`-DUSE_GUROBI=OFF`). The kernelizer, trimmer, submodular, and generator binaries are fully functional. To use the ILP solver, build from source with Gurobi installed.
+
 ### Build from source
 
 ```bash
@@ -40,6 +49,11 @@ sudo apt-get install libtbb-dev libhwloc-dev libboost-program-options-dev
 
 # Build
 mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
+```
+
+To build without Gurobi:
+```bash
+cmake -DCMAKE_BUILD_TYPE=Release -DUSE_GUROBI=OFF ..
 ```
 
 ### Run

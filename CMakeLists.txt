@@ -38,15 +38,19 @@ ELSE ()
   MESSAGE(FATAL_ERROR "TBB library not found. Install TBB on your system.")
 ENDIF()
 
-# Find Gurobi library (taken from KaHIP)
-find_package(Gurobi REQUIRED)
-if(GUROBI_FOUND)
-  MESSAGE("Using Gurobi for ILP solver in ilp_improve")
-  include_directories(SYSTEM ${GUROBI_INCLUDE_DIR})
-  link_libraries(${GUROBI_LIBRARIES})
-ELSE()
-MESSAGE(FATAL_ERROR "Gurobui library not found. Install Gurobui on your system.")
-ENDIF()
+option(USE_GUROBI "Build with Gurobi ILP solver support" ON)
+
+if(USE_GUROBI)
+  # Find Gurobi library (taken from KaHIP)
+  find_package(Gurobi REQUIRED)
+  if(GUROBI_FOUND)
+    MESSAGE("Using Gurobi for ILP solver")
+    include_directories(SYSTEM ${GUROBI_INCLUDE_DIR})
+    link_libraries(${GUROBI_LIBRARIES})
+  ELSE()
+    MESSAGE(FATAL_ERROR "Gurobi library not found. Install Gurobi on your system or build with -DUSE_GUROBI=OFF.")
+  ENDIF()
+endif()
 
 # Find Boost Program Options Library (taken from Mt-KaHyPar)
 find_package(Boost 1.69 REQUIRED COMPONENTS program_options)
@@ -92,8 +96,11 @@ set(DEP_kernelizer  ${DEP_common}
                     ${CMAKE_CURRENT_SOURCE_DIR}/app/mincut_kernelizer.cpp
                     ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/kernelizer.cpp
                     ${CMAKE_CURRENT_SOURCE_DIR}/lib/coarsening/label_propagation.cpp
-                    ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/ilp.cpp
                     ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/submodular.cpp)
+
+if(USE_GUROBI)
+  list(APPEND DEP_kernelizer ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/ilp.cpp)
+endif()
 
 set(DEP_ilp ${DEP_common}
             ${CMAKE_CURRENT_SOURCE_DIR}/app/mincut_ilp.cpp
@@ -122,8 +129,6 @@ set(DEP_kcore_generator ${DEP_common}
 # Create executable programs
 add_executable(heicut_kernelizer           ${DEP_kernelizer})
 add_executable(heicut_kernelizer_parallel  ${DEP_kernelizer})
-add_executable(heicut_ilp                  ${DEP_ilp})
-add_executable(heicut_ilp_parallel         ${DEP_ilp})
 add_executable(heicut_trimmer              ${DEP_trimmer})
 add_executable(heicut_submodular           ${DEP_submodular})
 add_executable(heicut_submodular_parallel  ${DEP_submodular})
@@ -133,14 +138,21 @@ add_executable(heicut_kcore_generator      ${DEP_kcore_generator})
 # Link the Mt-KaHyPar library
 target_link_libraries(heicut_kernelizer          ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 target_link_libraries(heicut_kernelizer_parallel ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries(heicut_ilp                 ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
-target_link_libraries(heicut_ilp_parallel        ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 target_link_libraries(heicut_trimmer             ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 target_link_libraries(heicut_submodular          ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 target_link_libraries(heicut_submodular_parallel ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(heicut_kcore_generator     ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 
+if(USE_GUROBI)
+  add_executable(heicut_ilp                  ${DEP_ilp})
+  add_executable(heicut_ilp_parallel         ${DEP_ilp})
+  target_link_libraries(heicut_ilp                 ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
+  target_link_libraries(heicut_ilp_parallel        ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
+  target_compile_definitions(heicut_ilp_parallel        PUBLIC SMHM_PARALLEL)
+  target_compile_definitions(heicut_kernelizer          PUBLIC USE_GUROBI=1)
+  target_compile_definitions(heicut_kernelizer_parallel PUBLIC USE_GUROBI=1)
+endif()
+
 # Add the parallelization flag
-target_compile_definitions(heicut_ilp_parallel        PUBLIC SMHM_PARALLEL)
 target_compile_definitions(heicut_kernelizer_parallel PUBLIC SMHM_PARALLEL)
 target_compile_definitions(heicut_submodular_parallel PUBLIC SMHM_PARALLEL)
