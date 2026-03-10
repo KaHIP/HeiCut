@@ -3,6 +3,7 @@ HeiCut
 [![C++](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.16+-064F8C.svg)](https://cmake.org/)
 [![Linux](https://img.shields.io/badge/Linux-supported-success.svg)](https://github.com/KaHIP/HeiCut)
+[![macOS](https://img.shields.io/badge/macOS-supported-success.svg)](https://github.com/KaHIP/HeiCut)
 [![GitHub Stars](https://img.shields.io/github/stars/KaHIP/HeiCut)](https://github.com/KaHIP/HeiCut/stargazers)
 [![GitHub Issues](https://img.shields.io/github/issues/KaHIP/HeiCut)](https://github.com/KaHIP/HeiCut/issues)
 [![Last Commit](https://img.shields.io/github/last-commit/KaHIP/HeiCut)](https://github.com/KaHIP/HeiCut/commits)
