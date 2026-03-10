@@ -46,13 +46,13 @@ mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 
 ```bash
 # Run HeiCut with tight ordering
-./build/kernelizer path/to/hypergraph.hgr --ordering_type=tight
+./build/heicut_kernelizer path/to/hypergraph.hgr --ordering_type=tight
 
 # With label propagation
-./build/kernelizer path/to/hypergraph.hgr --ordering_type=tight --lp_num_iterations=1
+./build/heicut_kernelizer path/to/hypergraph.hgr --ordering_type=tight --lp_num_iterations=1
 
 # ILP solver (2-hour timeout)
-./build/ilp path/to/hypergraph.hgr --ilp_timeout=7200
+./build/heicut_ilp path/to/hypergraph.hgr --ilp_timeout=7200
 ```
 
 ---
@@ -73,15 +73,15 @@ The pipeline:
 
 | Binary | Description |
 |:-------|:------------|
-| `kernelizer` | Main HeiCut solver (sequential) |
-| `kernelizer_parallel` | Parallel HeiCut solver |
-| `ilp` | Relaxed BIP solver (Gurobi) |
-| `ilp_parallel` | Parallel ILP solver |
-| `trimmer` | Trimmer algorithm |
-| `submodular` | Vertex-ordering solver |
-| `submodular_parallel` | Parallel vertex-ordering solver |
-| `dumbbell_generator` | Synthetic dumbbell hypergraph generator |
-| `kcore_generator` | (k,2)-core benchmark generator |
+| `heicut_kernelizer` | Main HeiCut solver (sequential) |
+| `heicut_kernelizer_parallel` | Parallel HeiCut solver |
+| `heicut_ilp` | Relaxed BIP solver (Gurobi) |
+| `heicut_ilp_parallel` | Parallel ILP solver |
+| `heicut_trimmer` | Trimmer algorithm |
+| `heicut_submodular` | Vertex-ordering solver |
+| `heicut_submodular_parallel` | Parallel vertex-ordering solver |
+| `heicut_dumbbell_generator` | Synthetic dumbbell hypergraph generator |
+| `heicut_kcore_generator` | (k,2)-core benchmark generator |
 
 All executables support `--help` to list available arguments.
 
@@ -93,13 +93,13 @@ All executables support `--help` to list available arguments.
 
 ```bash
 # Tight ordering, no label propagation
-./build/kernelizer PATH_TO_HYPERGRAPH --ordering_type=tight
+./build/heicut_kernelizer PATH_TO_HYPERGRAPH --ordering_type=tight
 
 # Tight ordering + 1 round of label propagation
-./build/kernelizer PATH_TO_HYPERGRAPH --ordering_type=tight --lp_num_iterations=1
+./build/heicut_kernelizer PATH_TO_HYPERGRAPH --ordering_type=tight --lp_num_iterations=1
 
 # Parallel execution
-./build/kernelizer_parallel PATH_TO_HYPERGRAPH --ordering_type=tight
+./build/heicut_kernelizer_parallel PATH_TO_HYPERGRAPH --ordering_type=tight
 ```
 
 > **Tip:** Use `--verbose` to view detailed reduction performance.
@@ -108,35 +108,35 @@ All executables support `--help` to list available arguments.
 
 ```bash
 # ILP solver with 2-hour timeout
-./build/ilp PATH_TO_HYPERGRAPH --ilp_timeout=7200
+./build/heicut_ilp PATH_TO_HYPERGRAPH --ilp_timeout=7200
 
 # Parallel ILP solver
-./build/ilp_parallel PATH_TO_HYPERGRAPH --ilp_timeout=7200
+./build/heicut_ilp_parallel PATH_TO_HYPERGRAPH --ilp_timeout=7200
 ```
 
 ### Trimmer
 
 ```bash
-./build/trimmer PATH_TO_HYPERGRAPH --ordering_type=tight
+./build/heicut_trimmer PATH_TO_HYPERGRAPH --ordering_type=tight
 ```
 
 ### Vertex-Ordering Solver
 
 ```bash
-./build/submodular PATH_TO_HYPERGRAPH --ordering_type=tight
+./build/heicut_submodular PATH_TO_HYPERGRAPH --ordering_type=tight
 
 # Parallel
-./build/submodular_parallel PATH_TO_HYPERGRAPH --ordering_type=tight
+./build/heicut_submodular_parallel PATH_TO_HYPERGRAPH --ordering_type=tight
 ```
 
 ### Generators
 
 ```bash
 # Generate a (k,2)-core hypergraph
-./build/kcore_generator PATH_TO_HYPERGRAPH PATH_TO_OUTPUT
+./build/heicut_kcore_generator PATH_TO_HYPERGRAPH PATH_TO_OUTPUT
 
 # Generate a dumbbell hypergraph
-./build/dumbbell_generator PATH_TO_OUTPUT
+./build/heicut_dumbbell_generator PATH_TO_OUTPUT
 ```
 
 ---

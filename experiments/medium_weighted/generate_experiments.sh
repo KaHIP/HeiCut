@@ -83,7 +83,7 @@ do
         if  exists_in_list "${ALGORITHMS}" trimmer
         then
             create_folders_for_algorithm_and_path $path trimmer;
-            trimmer_command="${PATH_TO_ALGORITHMS}/trimmer ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} ${UNWEIGHTED_FLAG}";
+            trimmer_command="${PATH_TO_ALGORITHMS}/heicut_trimmer ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} ${UNWEIGHTED_FLAG}";
             store_command $path trimmer "${trimmer_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -93,7 +93,7 @@ do
         then
             submodular_algorithm_name="submodular_${ORDERING_TYPE}_${ORDERING_MODE}"
             create_folders_for_algorithm_and_path $path $submodular_algorithm_name;
-            submodular_command="${PATH_TO_ALGORITHMS}/submodular ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} ${UNWEIGHTED_FLAG}";
+            submodular_command="${PATH_TO_ALGORITHMS}/heicut_submodular ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} ${UNWEIGHTED_FLAG}";
             store_command $path $submodular_algorithm_name "${submodular_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -103,7 +103,7 @@ do
         then
             submodular_parallel_algorithm_name="submodular_parallel_${ORDERING_TYPE}_${ORDERING_MODE}_T${NUM_THREADS}"
             create_folders_for_algorithm_and_path $path $submodular_parallel_algorithm_name;
-            submodular_parallel_command="${PATH_TO_ALGORITHMS}/submodular_parallel ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} --num_threads=${NUM_THREADS} ${UNWEIGHTED_FLAG}";
+            submodular_parallel_command="${PATH_TO_ALGORITHMS}/heicut_submodular_parallel ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} --num_threads=${NUM_THREADS} ${UNWEIGHTED_FLAG}";
             store_command $path $submodular_parallel_algorithm_name "${submodular_parallel_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -112,7 +112,7 @@ do
         if  exists_in_list "${ALGORITHMS}" ilp
         then
             create_folders_for_algorithm_and_path $path ilp;
-            ilp_command="${PATH_TO_ALGORITHMS}/ilp ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
+            ilp_command="${PATH_TO_ALGORITHMS}/heicut_ilp ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
             store_command $path ilp "${ilp_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -122,7 +122,7 @@ do
         then
             ilp_parallel_algorithm_name="ilp_parallel_T${NUM_THREADS}"
             create_folders_for_algorithm_and_path $path $ilp_parallel_algorithm_name;
-            ilp_parallel_command="${PATH_TO_ALGORITHMS}/ilp_parallel ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --num_threads=${NUM_THREADS} ${UNWEIGHTED_FLAG}";
+            ilp_parallel_command="${PATH_TO_ALGORITHMS}/heicut_ilp_parallel ${path_to_hypergraph} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --num_threads=${NUM_THREADS} ${UNWEIGHTED_FLAG}";
             store_command $path $ilp_parallel_algorithm_name "${ilp_parallel_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -131,7 +131,7 @@ do
         if  exists_in_list "${ALGORITHMS}" maxsat
         then
             create_folders_for_algorithm_and_path $path maxsat;
-            maxsat_command="${PATH_TO_ALGORITHMS}/maxsat ${path_to_hypergraph} ${path}/maxsat/wcnf.pipe ${path}/maxsat/sol.pipe --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
+            maxsat_command="${PATH_TO_ALGORITHMS}/heicut_maxsat ${path_to_hypergraph} ${path}/maxsat/wcnf.pipe ${path}/maxsat/sol.pipe --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
             store_command $path maxsat "${maxsat_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -141,7 +141,7 @@ do
         then
             maxsat_parallel_algorithm_name="maxsat_parallel_T${NUM_THREADS}"
             create_folders_for_algorithm_and_path $path $maxsat_parallel_algorithm_name;
-            maxsat_parallel_command="${PATH_TO_ALGORITHMS}/maxsat_parallel ${path_to_hypergraph} ${path}/${maxsat_parallel_algorithm_name}/wcnf.pipe ${path}/${maxsat_parallel_algorithm_name}/sol.pipe --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --num_threads=${NUM_THREADS} ${UNWEIGHTED_FLAG}";
+            maxsat_parallel_command="${PATH_TO_ALGORITHMS}/heicut_maxsat_parallel ${path_to_hypergraph} ${path}/${maxsat_parallel_algorithm_name}/wcnf.pipe ${path}/${maxsat_parallel_algorithm_name}/sol.pipe --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --num_threads=${NUM_THREADS} ${UNWEIGHTED_FLAG}";
             store_command $path $maxsat_parallel_algorithm_name "${maxsat_parallel_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -153,7 +153,7 @@ do
             do
                 kernelizer_algorithm_name="kernelizer_IT${lp_num_iterations}"
                 create_folders_for_algorithm_and_path $path $kernelizer_algorithm_name;
-                kernelizer_command="${PATH_TO_ALGORITHMS}/kernelizer ${path_to_hypergraph} --seed=${seed} --lp_num_iterations=${lp_num_iterations} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --base_solver=${BASE_SOLVER} --pruning_mode=${PRUNING_MODE} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} --verbose ${UNWEIGHTED_FLAG}";
+                kernelizer_command="${PATH_TO_ALGORITHMS}/heicut_kernelizer ${path_to_hypergraph} --seed=${seed} --lp_num_iterations=${lp_num_iterations} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --base_solver=${BASE_SOLVER} --pruning_mode=${PRUNING_MODE} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} --verbose ${UNWEIGHTED_FLAG}";
                 store_command $path $kernelizer_algorithm_name "${kernelizer_command}" $GB_MEMORY_LIMIT;
             done
         fi
@@ -166,7 +166,7 @@ do
             do
                 kernelizer_parallel_algorithm_name="kernelizer_parallel_IT${lp_num_iterations}_T${NUM_THREADS}"
                 create_folders_for_algorithm_and_path $path $kernelizer_parallel_algorithm_name;
-                kernelizer_parallel_command="${PATH_TO_ALGORITHMS}/kernelizer_parallel ${path_to_hypergraph} --seed=${seed} --lp_num_iterations=${lp_num_iterations} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --base_solver=${BASE_SOLVER} --pruning_mode=${PRUNING_MODE} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} --num_threads=${NUM_THREADS} --verbose ${UNWEIGHTED_FLAG}";
+                kernelizer_parallel_command="${PATH_TO_ALGORITHMS}/heicut_kernelizer_parallel ${path_to_hypergraph} --seed=${seed} --lp_num_iterations=${lp_num_iterations} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} --base_solver=${BASE_SOLVER} --pruning_mode=${PRUNING_MODE} --ordering_type=${ORDERING_TYPE} --ordering_mode=${ORDERING_MODE} --num_threads=${NUM_THREADS} --verbose ${UNWEIGHTED_FLAG}";
                 store_command $path $kernelizer_parallel_algorithm_name "${kernelizer_parallel_command}" $GB_MEMORY_LIMIT;
             done
         fi
@@ -176,7 +176,7 @@ do
         if  exists_in_list "${ALGORITHMS}" kcore_generator
         then
             create_folders_for_algorithm_and_path $path kcore_generator;
-            kcore_generator_command="${PATH_TO_ALGORITHMS}/kcore_generator ${path_to_hypergraph} ${path}/kcore_generator/${hypergraph_name} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
+            kcore_generator_command="${PATH_TO_ALGORITHMS}/heicut_kcore_generator ${path_to_hypergraph} ${path}/kcore_generator/${hypergraph_name} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
             store_command $path kcore_generator "${kcore_generator_command}" $GB_MEMORY_LIMIT;
         fi
         
@@ -185,7 +185,7 @@ do
         if  exists_in_list "${ALGORITHMS}" hypercactus_generator
         then
             create_folders_for_algorithm_and_path $path hypercactus_generator;
-            hypercactus_generator_command="${PATH_TO_ALGORITHMS}/hypercactus_generator ${path_to_hypergraph} ${path}/hypercactus_generator/${hypergraph_name} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
+            hypercactus_generator_command="${PATH_TO_ALGORITHMS}/heicut_hypercactus_generator ${path_to_hypergraph} ${path}/hypercactus_generator/${hypergraph_name} --seed=${seed} --file_format=${FILE_FORMAT} --preset_type=${PRESET_TYPE} ${UNWEIGHTED_FLAG}";
             store_command $path hypercactus_generator "${hypercactus_generator_command}" $GB_MEMORY_LIMIT;
         fi
     done
