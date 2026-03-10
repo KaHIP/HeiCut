@@ -1,21 +1,22 @@
 <h1 align="center">HeiCut</h1>
 
 <p align="center">
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![C++](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
-[![CMake](https://img.shields.io/badge/CMake-3.16+-064F8C.svg)](https://cmake.org/)
-[![Linux](https://img.shields.io/badge/Linux-supported-success.svg)](https://github.com/KaHIP/HeiCut)
-[![macOS](https://img.shields.io/badge/macOS-supported-success.svg)](https://github.com/KaHIP/HeiCut)
-[![GitHub Stars](https://img.shields.io/github/stars/KaHIP/HeiCut)](https://github.com/KaHIP/HeiCut/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/KaHIP/HeiCut)](https://github.com/KaHIP/HeiCut/issues)
-[![Last Commit](https://img.shields.io/github/last-commit/KaHIP/HeiCut)](https://github.com/KaHIP/HeiCut/commits)
-[![ALENEX'26](https://img.shields.io/badge/ALENEX'26-10.1137/1.9781611978957.13-blue)](https://doi.org/10.1137/1.9781611978957.13)
-[![arXiv](https://img.shields.io/badge/arXiv-2504.19842-b31b1b.svg)](https://arxiv.org/abs/2504.19842)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17140472.svg)](https://doi.org/10.5281/zenodo.17140472)
-[![Homebrew](https://img.shields.io/badge/homebrew-available-orange)](https://github.com/KaHIP/homebrew-kahip)
-[![Heidelberg University](https://img.shields.io/badge/Heidelberg-University-c1002a)](https://www.uni-heidelberg.de)
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://isocpp.org/"><img src="https://img.shields.io/badge/C++-17-blue.svg" alt="C++"></a>
+  <a href="https://cmake.org/"><img src="https://img.shields.io/badge/CMake-3.16+-064F8C.svg" alt="CMake"></a>
+  <a href="https://github.com/KaHIP/HeiCut"><img src="https://img.shields.io/badge/Linux-supported-success.svg" alt="Linux"></a>
+  <a href="https://github.com/KaHIP/HeiCut"><img src="https://img.shields.io/badge/macOS-supported-success.svg" alt="macOS"></a>
+  <a href="https://github.com/KaHIP/homebrew-kahip"><img src="https://img.shields.io/badge/homebrew-available-orange" alt="Homebrew"></a>
+  <br>
+  <a href="https://doi.org/10.1137/1.9781611978957.13"><img src="https://img.shields.io/badge/ALENEX'26-10.1137/1.9781611978957.13-blue" alt="ALENEX'26"></a>
+  <a href="https://arxiv.org/abs/2504.19842"><img src="https://img.shields.io/badge/arXiv-2504.19842-b31b1b.svg" alt="arXiv"></a>
+  <a href="https://doi.org/10.5281/zenodo.17140472"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.17140472.svg" alt="DOI"></a>
+  <br>
+  <a href="https://github.com/KaHIP/HeiCut/stargazers"><img src="https://img.shields.io/github/stars/KaHIP/HeiCut" alt="GitHub Stars"></a>
+  <a href="https://github.com/KaHIP/HeiCut/issues"><img src="https://img.shields.io/github/issues/KaHIP/HeiCut" alt="GitHub Issues"></a>
+  <a href="https://github.com/KaHIP/HeiCut/commits"><img src="https://img.shields.io/github/last-commit/KaHIP/HeiCut" alt="Last Commit"></a>
+  <a href="https://www.uni-heidelberg.de"><img src="https://img.shields.io/badge/Heidelberg-University-c1002a" alt="Heidelberg University"></a>
 </p>
-=====
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/KaHIP/HeiCut/main/logo/heicut-banner.png" alt="HeiCut Logo" width="900"/>
