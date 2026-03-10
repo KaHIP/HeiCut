@@ -123,8 +123,11 @@ set(DEP_kcore_generator ${DEP_common}
                         ${CMAKE_CURRENT_SOURCE_DIR}/app/generators/kcore_generator.cpp
                         ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/kernelizer.cpp
                         ${CMAKE_CURRENT_SOURCE_DIR}/lib/coarsening/label_propagation.cpp
-                        ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/ilp.cpp
                         ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/submodular.cpp)
+
+if(USE_GUROBI)
+  list(APPEND DEP_kcore_generator ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/ilp.cpp)
+endif()
 
 # Create executable programs
 add_executable(heicut_kernelizer           ${DEP_kernelizer})
@@ -151,6 +154,7 @@ if(USE_GUROBI)
   target_compile_definitions(heicut_ilp_parallel        PUBLIC SMHM_PARALLEL)
   target_compile_definitions(heicut_kernelizer          PUBLIC USE_GUROBI=1)
   target_compile_definitions(heicut_kernelizer_parallel PUBLIC USE_GUROBI=1)
+  target_compile_definitions(heicut_kcore_generator     PUBLIC USE_GUROBI=1)
 endif()
 
 # Add the parallelization flag
