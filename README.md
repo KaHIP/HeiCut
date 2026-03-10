@@ -1,5 +1,6 @@
 <h1 align="center">HeiCut</h1>
 
+<p align="center">
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![C++](https://img.shields.io/badge/C++-17-blue.svg)](https://isocpp.org/)
 [![CMake](https://img.shields.io/badge/CMake-3.16+-064F8C.svg)](https://cmake.org/)
@@ -13,6 +14,7 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17140472.svg)](https://doi.org/10.5281/zenodo.17140472)
 [![Homebrew](https://img.shields.io/badge/homebrew-available-orange)](https://github.com/KaHIP/homebrew-kahip)
 [![Heidelberg University](https://img.shields.io/badge/Heidelberg-University-c1002a)](https://www.uni-heidelberg.de)
+</p>
 =====
 
 <p align="center">
