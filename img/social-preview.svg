@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#16213e"/>
+    </linearGradient>
+    <radialGradient id="glowS" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#0891b2" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#0891b2" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowT" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#d97706" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#d97706" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- Partition glows -->
+  <ellipse cx="190" cy="310" rx="180" ry="260" fill="url(#glowS)"/>
+  <ellipse cx="510" cy="310" rx="180" ry="260" fill="url(#glowT)"/>
+
+  <!-- Cut line (dashed, vertical) -->
+  <line x1="350" y1="40" x2="350" y2="580" stroke="#ef5350" stroke-width="2" stroke-dasharray="10,8" opacity="0.5"/>
+
+  <!-- S nodes: S1(130,130) S2(240,180) S3(170,300) S4(240,390) S5(130,440) -->
+  <!-- T nodes: T1(480,130) T2(530,240) T3(510,360) T4(580,430) T5(600,160) -->
+
+  <!-- Hyperedge A: fully in S (S1, S2, S3) - teal blob -->
+  <path d="M 100,90 C 160,50 290,80 290,180 C 290,260 230,340 170,340 C 100,340 60,260 70,190 C 75,140 85,105 100,90 Z"
+        fill="#0891b2" fill-opacity="0.12" stroke="#0891b2" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- Hyperedge B: fully in S (S3, S4, S5) - emerald blob -->
+  <path d="M 100,270 C 150,240 290,280 290,400 C 290,470 210,490 140,480 C 80,470 60,410 70,350 C 78,300 90,280 100,270 Z"
+        fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- Hyperedge C: CROSSING CUT (S2, S4 to T1, T2) - purple blob, dashed -->
+  <path d="M 200,140 C 270,80 510,70 540,140 C 570,210 570,290 530,280 C 460,260 310,340 270,320 C 200,290 170,220 200,140 Z"
+        fill="#a855f7" fill-opacity="0.10" stroke="#a855f7" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="6,4"/>
+
+  <!-- Hyperedge D: CROSSING CUT (S3, S5 to T3, T4) - rose blob, dashed -->
+  <path d="M 120,400 C 180,340 450,320 550,370 C 630,410 620,470 560,470 C 440,470 220,490 140,470 C 90,460 90,420 120,400 Z"
+        fill="#f43f5e" fill-opacity="0.10" stroke="#f43f5e" stroke-opacity="0.4" stroke-width="2" stroke-dasharray="6,4"/>
+
+  <!-- Hyperedge E: fully in T (T1, T2, T5) - amber blob -->
+  <path d="M 440,90 C 510,60 650,80 650,170 C 650,270 580,290 520,280 C 440,260 400,200 420,150 C 430,120 435,100 440,90 Z"
+        fill="#d97706" fill-opacity="0.12" stroke="#d97706" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- Hyperedge F: fully in T (T2, T3, T4) - indigo blob -->
+  <path d="M 480,210 C 530,180 630,220 640,320 C 650,420 610,470 560,470 C 490,470 440,410 450,340 C 455,290 470,230 480,210 Z"
+        fill="#6366f1" fill-opacity="0.12" stroke="#6366f1" stroke-opacity="0.35" stroke-width="1.5"/>
+
+  <!-- S partition nodes (teal) -->
+  <circle cx="130" cy="130" r="12" fill="#0891b2"/>
+  <circle cx="240" cy="180" r="12" fill="#0891b2"/>
+  <circle cx="170" cy="300" r="12" fill="#0891b2"/>
+  <circle cx="240" cy="390" r="12" fill="#0891b2"/>
+  <circle cx="130" cy="440" r="12" fill="#0891b2"/>
+
+  <!-- T partition nodes (amber) -->
+  <circle cx="480" cy="130" r="12" fill="#d97706"/>
+  <circle cx="530" cy="240" r="12" fill="#d97706"/>
+  <circle cx="510" cy="360" r="12" fill="#d97706"/>
+  <circle cx="580" cy="430" r="12" fill="#d97706"/>
+  <circle cx="600" cy="160" r="12" fill="#d97706"/>
+
+  <!-- Ghosted/kernelized nodes -->
+  <circle cx="75" cy="290" r="9" fill="none" stroke="#546e7a" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.4"/>
+  <text x="75" y="294" font-family="sans-serif" font-size="10" fill="#546e7a" text-anchor="middle" opacity="0.5">&#x2717;</text>
+  <circle cx="650" cy="300" r="9" fill="none" stroke="#546e7a" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.4"/>
+  <text x="650" y="304" font-family="sans-serif" font-size="10" fill="#546e7a" text-anchor="middle" opacity="0.5">&#x2717;</text>
+
+  <!-- Title -->
+  <text x="740" y="220" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="76" font-weight="700">
+    <tspan fill="#0891b2">Hei</tspan><tspan fill="#e0e0e0">Cut</tspan>
+  </text>
+
+  <!-- Separator -->
+  <line x1="740" y1="245" x2="1220" y2="245" stroke="#334155" stroke-width="2"/>
+
+  <!-- Subtitle -->
+  <text x="740" y="285" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="26" fill="#90a4ae">
+    Exact Minimum Cuts in Hypergraphs
+  </text>
+
+  <!-- Tagline -->
+  <text x="740" y="345" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" fill="#607d8b">
+    Scalable exact solver for the hypergraph
+  </text>
+  <text x="740" y="373" font-family="'DejaVu Sans', 'Segoe UI', Helvetica, Arial, sans-serif" font-size="20" fill="#607d8b">
+    minimum cut problem
+  </text>
+
+  <!-- Badge: Part of KaHIP -->
+  <rect x="740" y="410" width="150" height="30" rx="15" fill="#263238"/>
+  <text x="815" y="430" font-family="'DejaVu Sans', sans-serif" font-size="14" fill="#80cbc4" text-anchor="middle">Part of KaHIP</text>
+
+  <!-- Legend -->
+  <circle cx="750" cy="510" r="7" fill="#0891b2"/>
+  <text x="764" y="515" font-family="'DejaVu Sans', sans-serif" font-size="15" fill="#a0a0a0">S</text>
+
+  <circle cx="800" cy="510" r="7" fill="#d97706"/>
+  <text x="814" y="515" font-family="'DejaVu Sans', sans-serif" font-size="15" fill="#a0a0a0">T</text>
+
+  <line x1="850" y1="510" x2="878" y2="510" stroke="#ef5350" stroke-width="2.5" stroke-dasharray="6,4"/>
+  <text x="886" y="515" font-family="'DejaVu Sans', sans-serif" font-size="15" fill="#a0a0a0">min cut</text>
+
+  <path d="M 980,505 C 990,498 1002,515 1012,508" fill="#a855f7" fill-opacity="0.2" stroke="#a855f7" stroke-opacity="0.5" stroke-width="1.5"/>
+  <text x="1022" y="515" font-family="'DejaVu Sans', sans-serif" font-size="15" fill="#a0a0a0">hyperedge</text>
+
+  <!-- Bottom text -->
+  <text x="350" y="620" text-anchor="middle" font-family="'DejaVu Sans', sans-serif" font-size="14" fill="#546e7a">
+    exact minimum cuts in hypergraphs at scale
+  </text>
+</svg>
