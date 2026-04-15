@@ -24,6 +24,8 @@
 
 **HeiCut** is a highly efficient, exact solver for the **minimum cut problem in hypergraphs** using FPT kernelization. Given a hypergraph, the minimum cut problem asks for a partition of the vertices into two non-empty sets such that the total weight of hyperedges crossing the partition is minimized. HeiCut performs repeated rounds of provably exact reduction rules that preserve the minimum cut while drastically shrinking instance size, then applies an exact solver to the reduced hypergraph. Part of the [KaHIP](https://github.com/KaHIP) organization.
 
+> **Python Interface:** An easy-to-use Python interface for this software is available in [CHSZLabLib](https://github.com/CHSZLab/CHSZLabLib).
+
 | | |
 |:--|:--|
 | **What it solves** | Exact minimum cut in weighted and unweighted hypergraphs |
