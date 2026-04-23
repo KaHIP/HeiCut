@@ -96,7 +96,8 @@ set(DEP_kernelizer  ${DEP_common}
                     ${CMAKE_CURRENT_SOURCE_DIR}/app/mincut_kernelizer.cpp
                     ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/kernelizer.cpp
                     ${CMAKE_CURRENT_SOURCE_DIR}/lib/coarsening/label_propagation.cpp
-                    ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/submodular.cpp)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/submodular.cpp
+                    ${CMAKE_CURRENT_SOURCE_DIR}/lib/conversion/hypergraph_converter.cpp)
 
 if(USE_GUROBI)
   list(APPEND DEP_kernelizer ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/ilp.cpp)
@@ -118,15 +119,26 @@ set(DEP_submodular  ${DEP_common}
 set(DEP_dumbbell_generator  ${DEP_common}
                             ${CMAKE_CURRENT_SOURCE_DIR}/app/generators/dumbbell_generator.cpp)
 
+set(DEP_hypercactus_generator ${DEP_common}
+                              ${CMAKE_CURRENT_SOURCE_DIR}/app/generators/hypercactus_generator.cpp
+                              ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/kernelizer.cpp
+                              ${CMAKE_CURRENT_SOURCE_DIR}/lib/coarsening/label_propagation.cpp
+                              ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/submodular.cpp
+                              ${CMAKE_CURRENT_SOURCE_DIR}/lib/conversion/hypergraph_converter.cpp
+                              ${CMAKE_CURRENT_SOURCE_DIR}/lib/decomposition/canonical_decomposition.cpp
+                              ${CMAKE_CURRENT_SOURCE_DIR}/lib/coarsening/strongly_connected_components.cpp)
+
 set(DEP_kcore_generator ${DEP_common}
                         ${CMAKE_CURRENT_SOURCE_DIR}/lib/decomposition/core_decomposition.cpp
                         ${CMAKE_CURRENT_SOURCE_DIR}/app/generators/kcore_generator.cpp
                         ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/kernelizer.cpp
                         ${CMAKE_CURRENT_SOURCE_DIR}/lib/coarsening/label_propagation.cpp
-                        ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/submodular.cpp)
+                        ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/submodular.cpp
+                        ${CMAKE_CURRENT_SOURCE_DIR}/lib/conversion/hypergraph_converter.cpp)
 
 if(USE_GUROBI)
   list(APPEND DEP_kcore_generator ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/ilp.cpp)
+  list(APPEND DEP_hypercactus_generator ${CMAKE_CURRENT_SOURCE_DIR}/lib/solvers/ilp.cpp)
 endif()
 
 # Create executable programs
@@ -136,6 +148,7 @@ add_executable(heicut_trimmer              ${DEP_trimmer})
 add_executable(heicut_submodular           ${DEP_submodular})
 add_executable(heicut_submodular_parallel  ${DEP_submodular})
 add_executable(heicut_dumbbell_generator   ${DEP_dumbbell_generator})
+add_executable(heicut_hypercactus_generator ${DEP_hypercactus_generator})
 add_executable(heicut_kcore_generator      ${DEP_kcore_generator})
 
 # Link the Mt-KaHyPar library
@@ -144,6 +157,7 @@ target_link_libraries(heicut_kernelizer_parallel ${CMAKE_CURRENT_SOURCE_DIR}/ext
 target_link_libraries(heicut_trimmer             ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 target_link_libraries(heicut_submodular          ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 target_link_libraries(heicut_submodular_parallel ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(heicut_hypercactus_generator ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 target_link_libraries(heicut_kcore_generator     ${CMAKE_CURRENT_SOURCE_DIR}/extern/mt-kahypar-library/libmtkahypar.so ${Boost_LIBRARIES})
 
 if(USE_GUROBI)
@@ -154,6 +168,7 @@ if(USE_GUROBI)
   target_compile_definitions(heicut_ilp_parallel        PUBLIC SMHM_PARALLEL)
   target_compile_definitions(heicut_kernelizer          PUBLIC USE_GUROBI=1)
   target_compile_definitions(heicut_kernelizer_parallel PUBLIC USE_GUROBI=1)
+  target_compile_definitions(heicut_hypercactus_generator PUBLIC USE_GUROBI=1)
   target_compile_definitions(heicut_kcore_generator     PUBLIC USE_GUROBI=1)
 endif()
 

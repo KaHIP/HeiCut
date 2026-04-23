@@ -72,4 +72,7 @@ const bool DEFAULT_DUMBBELL_WEIGHTED = false;
 // Default option on whether the hypergraph should be processed as unweighted
 const bool DEFAULT_UNWEIGHTED = false;
 
+// Default option on whether the hypercactus generator should allow floating point edge weights in the output
+const bool DEFAULT_ALLOW_OUTPUT_FLOAT_EDGE_WEIGHTS = false;
+
 #endif // end of SMHM_CONSTANTS_H

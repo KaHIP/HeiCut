@@ -41,12 +41,6 @@ private:
     // for the sequential case, this is much faster than removeEdge
     void disable_hyperedge(StaticHypergraph &hypergraph, const EdgeID edgeID);
 
-    // // Compute the fingerprint of a hyperedge
-    // Fingerprint get_fingerprint_of_hyperedge(const StaticHypergraph &hypergraph, const EdgeID edgeID);
-
-    // // Check if two hyperedges are parallel
-    // bool check_if_edges_are_parallel(const std::vector<NodeID> &coveredPins, const StaticHypergraph &hypergraph, const EdgeID representativeEdgeID, const EdgeID edgeID);
-
     // Get the weighted node degrees of the hypergraph
     std::vector<EdgeWeight> get_weighted_node_degrees(const StaticHypergraph &hypergraph);
 
@@ -55,27 +49,37 @@ public:
     // NB: The passed hypergraph is modified in place
     void remove_hyperedges_of_size_one_or_weight_zero(StaticHypergraph &hypergraph);
 
-    // // Remove parallel hyperedges
-    // // NB: The passed hypergraph is modified in place
-    // void remove_parallel_hyperedges(StaticHypergraph &hypergraph);
-
     // Compute a naive estimate of the minimum cut using the minimum weighted node degree
     CutValue compute_naive_mincut_estimate(const StaticHypergraph &hypergraph);
 
     // Contract hyperedges that are not lighter than the given estimate (VieCut pruning rule 1)
-    StaticHypergraph contract_hyperedges_not_lighter_than_estimate(StaticHypergraph &hypergraph, const CutValue mincutEstimate);
+    StaticHypergraph contract_hyperedges_not_lighter_than_estimate(StaticHypergraph &hypergraph,
+                                                                   mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                                   CutValue mincutEstimate,
+                                                                   const bool findAllMincuts = false);
 
     // Contract overlaps that are not lighter than the given estimate
-    StaticHypergraph contract_overlaps_not_lighter_than_estimate(StaticHypergraph &hypergraph, const CutValue mincutEstimate);
+    StaticHypergraph contract_overlaps_not_lighter_than_estimate(StaticHypergraph &hypergraph,
+                                                                 mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                                 CutValue mincutEstimate,
+                                                                 const bool findAllMincuts = false);
 
     // Contract strictly nested isolated substructures of parent hyperedges
-    StaticHypergraph contract_strictly_nested_isolated_substructures(StaticHypergraph &hypergraph);
+    // NB: Nested isolated substructures are never part of any mincut, thus we can also contract them if we want to find all mincuts without any modification
+    StaticHypergraph contract_strictly_nested_isolated_substructures(StaticHypergraph &hypergraph,
+                                                                     mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID);
 
     // Contract hyperedges of size two that can be shifted to one side of the cut (VieCut pruning rule 2)
-    StaticHypergraph contract_shiftable_hyperedges_of_size_two(StaticHypergraph &hypergraph);
+    StaticHypergraph contract_shiftable_hyperedges_of_size_two(StaticHypergraph &hypergraph,
+                                                               mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                               const CutValue mincutEstimate,
+                                                               const bool findAllMincuts = false);
 
     // Contract hyperedges of size two that meet the triangle conditions (VieCut pruning rules 3 and 4)
-    StaticHypergraph contract_triangle_hyperedges_of_size_two(StaticHypergraph &hypergraph, const CutValue mincutEstimate);
+    StaticHypergraph contract_triangle_hyperedges_of_size_two(StaticHypergraph &hypergraph,
+                                                              mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                              const CutValue mincutEstimate,
+                                                              const bool findAllMincuts = false);
 };
 
 // Create the appropriate union find datastructure object based on the number of threads used
@@ -110,97 +114,6 @@ inline void Pruner::remove_hyperedges_of_size_one_or_weight_zero(StaticHypergrap
     }
     endFor;
 }
-
-// // Remove parallel hyperedges
-// // NB: The passed hypergraph is modified in place
-// inline void Pruner::remove_parallel_hyperedges(StaticHypergraph &hypergraph)
-// {
-//     // Store a list of representative hyperedges for each fingerprint
-//     // NB: Representative hyperedges are those hyperedges that persist when merging parallel hyperedges.
-//     //     So, two non-parallel hyperedges could have the same fingerprint (hash collision) and we then store
-//     //     both hyperedges in the list because the next hyperedge with the same fingerprint could be parallel
-//     //     to one of them.
-//     // NB2: We use dense_hash_map since speed is more important than memory usage here. However, we could
-//     //      also use sparse_hash_map if the memory usage is too high.
-//     google::dense_hash_map<Fingerprint, std::deque<EdgeID>> parallelMap;
-//     parallelMap.set_empty_key(0);
-
-//     // Marks the pins that are covered by a hyperedge
-//     // NB: We only use one vector since we go once over the hyperedges and flag for each hyperedge its pins
-//     //     by setting at the corresponding index (= pin id) the value to the id of the hyperedge. This means
-//     //     that we simply overwrite old values and do not have to reset the vector for each hyperedge.
-//     std::vector<NodeID> coveredPins(hypergraph.initialNumNodes(), std::numeric_limits<EdgeID>::max());
-
-//     // Iterate over all hyperedges
-//     for (EdgeID edgeID : hypergraph.edges())
-//     {
-//         // Ignore disabled hyperedges
-//         if (!hypergraph.edgeIsEnabled(edgeID))
-//             continue;
-
-//         // Store if we already have marked the covered pins
-//         bool alreadyMarkedCoveredPins = false;
-//         // Get the fingerprint of the hyperedge
-//         Fingerprint fingerprint = get_fingerprint_of_hyperedge(hypergraph, edgeID);
-//         // Store if we found a representative hyperedge that is parallel to the current hyperedge
-//         bool foundParallelRepresentative = false;
-//         // Iterate over the list of representative hyperedges wih the same fingerprint
-//         for (EdgeID representativeEdgeID : parallelMap[fingerprint])
-//         {
-//             // The hyperedges can only be parallel if they have the same size
-//             if (hypergraph.edgeSize(representativeEdgeID) != hypergraph.edgeSize(edgeID))
-//                 continue;
-
-//             // If not already done, mark the pins that are covered by the current hyperedge
-//             if (!alreadyMarkedCoveredPins)
-//             {
-//                 for (NodeID pinID : hypergraph.pins(edgeID))
-//                     if (hypergraph.nodeIsEnabled(pinID))
-//                         coveredPins[pinID] = edgeID;
-//                 alreadyMarkedCoveredPins = true;
-//             }
-
-//             // Check if the hyperedges are parallel
-//             if (check_if_edges_are_parallel(coveredPins, hypergraph, representativeEdgeID, edgeID))
-//             {
-//                 // Merge the hyperedges by adding the weight of the current hyperedge to the weight of the representative hyperedge
-//                 hypergraph.setEdgeWeight(representativeEdgeID, hypergraph.edgeWeight(representativeEdgeID) + hypergraph.edgeWeight(edgeID));
-//                 disable_hyperedge(hypergraph, edgeID);
-//                 // We can break here since we found a representative hyperedge that is parallel to the current hyperedge
-//                 foundParallelRepresentative = true;
-//                 break;
-//             }
-//         }
-//         // Add the hyperedge to the list of representative hyperedges if it is not parallel to any other representative hyperedge
-//         if (!foundParallelRepresentative)
-//             parallelMap[fingerprint].push_back(edgeID);
-//     }
-// }
-
-// // Compute the fingerprint of a hyperedge
-// inline Fingerprint Pruner::get_fingerprint_of_hyperedge(const StaticHypergraph &hypergraph, const EdgeID edgeID)
-// {
-//     Fingerprint fingerprint = 0;
-//     for (NodeID pinID : hypergraph.pins(edgeID))
-//         if (hypergraph.nodeIsEnabled(pinID))
-//             // NB: We must add 1 to the pinID, otherwise we get 0 * 0 = 0 if pinID = 0
-//             //     and the empty key of the hash map is also 0.
-//             fingerprint += (pinID + 1) * (pinID + 1);
-
-//     return fingerprint;
-// }
-
-// // Check if two hyperedges are parallel
-// inline bool Pruner::check_if_edges_are_parallel(const std::vector<NodeID> &coveredPins, const StaticHypergraph &hypergraph, const EdgeID representativeEdgeID, const EdgeID edgeID)
-// {
-//     for (NodeID pinID : hypergraph.pins(representativeEdgeID))
-//         // If one of the pins of the representative hyperedge is not covered by the current hyperedge, the hyperedges are not parallel
-//         if (hypergraph.nodeIsEnabled(pinID) && coveredPins[pinID] != edgeID)
-//             return false;
-//     // NB: We can safely return here true since we already checked that the hyperedges have the same size outside of this function and thus
-//     //     the hyperedges cannot be strict subsets of each other.
-//     return true;
-// }
 
 // Compute a naive estimate of the minimum cut using the minimum weighted node degree
 inline CutValue Pruner::compute_naive_mincut_estimate(const StaticHypergraph &hypergraph)
@@ -273,14 +186,21 @@ inline std::vector<EdgeWeight> Pruner::get_weighted_node_degrees(const StaticHyp
 }
 
 // Contract hyperedges that are not lighter than the given estimate (VieCut pruning rule 1)
-StaticHypergraph inline Pruner::contract_hyperedges_not_lighter_than_estimate(StaticHypergraph &hypergraph, const CutValue mincutEstimate)
+inline StaticHypergraph Pruner::contract_hyperedges_not_lighter_than_estimate(StaticHypergraph &hypergraph,
+                                                                              mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                                              CutValue mincutEstimate,
+                                                                              const bool findAllMincuts)
 {
+    // If we want to find all mincuts, the inequality must be strict, which is the same as increasing the mincut estimate by 1
+    if (findAllMincuts)
+        mincutEstimate += 1;
+
     // Get the initial number of nodes
     // NB: For static hypergraphs the length of the cluster id vector must be equal to the initial number of nodes.
     NodeIndex initialNumNodes = hypergraph.initialNumNodes();
 
-    // Initialize the cluster ids (= labels) of the nodes
-    mt_kahypar::parallel::scalable_vector<ClusterID> clusterID(initialNumNodes);
+    // Make sure that clusterID has the correct size
+    assert(clusterID.size() == initialNumNodes);
 
     // Initialize the union-find data structure, which keeps track of the nodes that can be contracted together
     auto unionFindPtr = create_union_find(initialNumNodes);
@@ -324,8 +244,15 @@ StaticHypergraph inline Pruner::contract_hyperedges_not_lighter_than_estimate(St
 }
 
 // Contract overlaps that are not lighter than the given estimate
-StaticHypergraph inline Pruner::contract_overlaps_not_lighter_than_estimate(StaticHypergraph &hypergraph, const CutValue mincutEstimate)
+inline StaticHypergraph Pruner::contract_overlaps_not_lighter_than_estimate(StaticHypergraph &hypergraph,
+                                                                            mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                                            CutValue mincutEstimate,
+                                                                            const bool findAllMincuts)
 {
+    // If we want to find all mincuts, the inequality must be strict, which is the same as increasing the mincut estimate by 1
+    if (findAllMincuts)
+        mincutEstimate += 1;
+
     // Get the weighted node degrees of the hypergraph
     std::vector<EdgeWeight> weightedNodeDegrees = get_weighted_node_degrees(hypergraph);
 
@@ -333,8 +260,8 @@ StaticHypergraph inline Pruner::contract_overlaps_not_lighter_than_estimate(Stat
     // NB: For static hypergraphs the length of the cluster id vector must be equal to the initial number of nodes.
     NodeIndex initialNumNodes = hypergraph.initialNumNodes();
 
-    // Initialize the cluster ids (= labels) of the nodes
-    mt_kahypar::parallel::scalable_vector<ClusterID> clusterID(initialNumNodes);
+    // Make sure that clusterID has the correct size
+    assert(clusterID.size() == initialNumNodes);
 
     // Initialize the union-find data structure, which keeps track of the nodes that can be contracted together
     auto unionFindPtr = create_union_find(initialNumNodes);
@@ -412,14 +339,16 @@ StaticHypergraph inline Pruner::contract_overlaps_not_lighter_than_estimate(Stat
 }
 
 // Contract strictly nested isolated substructures of parent hyperedges
-inline StaticHypergraph Pruner::contract_strictly_nested_isolated_substructures(StaticHypergraph &hypergraph)
+// NB: Nested isolated substructures are never part of any mincut, thus we can also contract them if we want to find all mincuts without any modification
+inline StaticHypergraph Pruner::contract_strictly_nested_isolated_substructures(StaticHypergraph &hypergraph,
+                                                                                mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID)
 {
     // Get the initial number of nodes
     // NB: For static hypergraphs the length of the cluster id vector must be equal to the initial number of nodes.
     NodeIndex initialNumNodes = hypergraph.initialNumNodes();
 
-    // Initialize the cluster ids (= labels) of the nodes
-    mt_kahypar::parallel::scalable_vector<ClusterID> clusterID(initialNumNodes);
+    // Make sure that clusterID has the correct size
+    assert(clusterID.size() == initialNumNodes);
 
     // Initialize the union-find data structure, which keeps track of the nodes that can be contracted together
     auto unionFindPtr = create_union_find(initialNumNodes);
@@ -613,7 +542,10 @@ inline StaticHypergraph Pruner::contract_strictly_nested_isolated_substructures(
 }
 
 // Contract hyperedges of size two that can be shifted to one side of the cut (VieCut pruning rule 2)
-inline StaticHypergraph Pruner::contract_shiftable_hyperedges_of_size_two(StaticHypergraph &hypergraph)
+inline StaticHypergraph Pruner::contract_shiftable_hyperedges_of_size_two(StaticHypergraph &hypergraph,
+                                                                          mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                                          const CutValue mincutEstimate,
+                                                                          const bool findAllMincuts)
 {
     // Get the weighted node degrees of the hypergraph
     // NB:  In the parallel version of VieCut, only uncontracted nodes are allowed to be contracted for PR 2, because they argue that
@@ -627,8 +559,8 @@ inline StaticHypergraph Pruner::contract_shiftable_hyperedges_of_size_two(Static
     // NB: For static hypergraphs the length of the cluster id vector must be equal to the initial number of nodes.
     NodeIndex initialNumNodes = hypergraph.initialNumNodes();
 
-    // Initialize the cluster ids (= labels) of the nodes
-    mt_kahypar::parallel::scalable_vector<ClusterID> clusterID(initialNumNodes);
+    // Make sure that clusterID has the correct size
+    assert(clusterID.size() == initialNumNodes);
 
     // Initialize the union-find data structure, which keeps track of the nodes that can be contracted together
     auto unionFindPtr = create_union_find(initialNumNodes);
@@ -654,11 +586,12 @@ inline StaticHypergraph Pruner::contract_shiftable_hyperedges_of_size_two(Static
                 continue;
 
             // Check if we can shift the hyperedge by moving the current pin to the other side of the cut
-            // IMPORTANT: Usually we would need to verify that the current pin has still other incident hyperedges apart from the current hyperedge,
+            // IMPORTANT: We would need to verify that the current pin has still other incident hyperedges apart from the current hyperedge,
             //            because otherwise the shifting idea of the rule does not work and the reduced hypergraph might have a larger mincut value.
             //            Example: An unweighted 2-uniform dumbbell hypergraph but where one side is a single node instead of a clique has obviously still
             //                     a mincut of 1, but the shifting rule is applicable to the "bridge" hyperedge, giving us the clique as a reduced hypergraph.
-            //            However, since we update the mincut value before and after every pruning rule using the naive estimate, we still capture the correct mincut
+            //            However, this additional check is only necessary if we wan to find all minimum cuts. This is not necessary if we only compute the mincut value,
+            //            because we update the mincut value before and after every pruning rule using the naive estimate, i.e. we still capture the correct mincut
             //            value and the increased mincut in the reduced hypergraph does not affect the result as we update the mincut only if we found a new lower value.
             // IMPORTANT 2: The inequality (2 * edgeWeight > weightedNodeDegrees[pinID]) MUST be strict because otherwise it can happen that two neighboring 2-uniform
             //              hyperedges both assume that they can be shifted but their common pin cannot be shifted to both sides at the same time.
@@ -667,7 +600,7 @@ inline StaticHypergraph Pruner::contract_shiftable_hyperedges_of_size_two(Static
             //                       If the inequality is not strict, then {1, 2} and {2, 3} would be contracted and the minimum cut of the contracted hypergraph is 10 (isolating node 4 or 7).
             //                       Note that even updating the mincut estimate after each pruning rule would not help here, because before and after contraction the min weighted node degree is larger than 6.
             //              One could make the inequality non-strict if one would allow pins to take only part of a single contraction (similar to pruning rule 3 of VieCut)
-            if (!canShiftHyperedge && 2 * edgeWeight > weightedNodeDegrees[pinID])
+            if (!canShiftHyperedge && 2 * edgeWeight > weightedNodeDegrees[pinID] && (!findAllMincuts || weightedNodeDegrees[pinID] > mincutEstimate))
                 canShiftHyperedge = true;
 
             // Store the first enabled pin of the hyperedge
@@ -694,7 +627,10 @@ inline StaticHypergraph Pruner::contract_shiftable_hyperedges_of_size_two(Static
 }
 
 // Contract hyperedges of size two that meet the triangle conditions (VieCut pruning rules 3 and 4)
-inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticHypergraph &hypergraph, const CutValue mincutEstimate)
+inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticHypergraph &hypergraph,
+                                                                         mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID,
+                                                                         const CutValue mincutEstimate,
+                                                                         const bool findAllMincuts)
 {
     // Get the weighted node degrees of the hypergraph
     std::vector<EdgeWeight> weightedNodeDegrees = get_weighted_node_degrees(hypergraph);
@@ -703,8 +639,8 @@ inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticH
     // NB: For static hypergraphs the length of the cluster id vector must be equal to the initial number of nodes.
     NodeIndex initialNumNodes = hypergraph.initialNumNodes();
 
-    // Initialize the cluster ids (= labels) of the nodes
-    mt_kahypar::parallel::scalable_vector<ClusterID> clusterID(initialNumNodes);
+    // Make sure that clusterID has the correct size
+    assert(clusterID.size() == initialNumNodes);
 
     // Initialize the union-find data structure, which keeps track of the nodes that can be contracted together
     auto unionFindPtr = create_union_find(initialNumNodes);
@@ -755,7 +691,7 @@ inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticH
             // Get the iterator range of the pins of the edge
             auto pinsIterator = hypergraph.pins(edgeID).begin();
             // Get the target of the hyperedge of size two
-            EdgeID targetID = 0;
+            NodeID targetID = 0;
             do
             {
                 targetID = *(pinsIterator++);
@@ -793,7 +729,7 @@ inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticH
             // Get the iterator range of the pins of the edge
             auto pinsIterator = hypergraph.pins(edgeID).begin();
             // Get the target of the hyperedge of size two
-            EdgeID targetID = 0;
+            NodeID targetID = 0;
             do
             {
                 targetID = *(pinsIterator++);
@@ -831,6 +767,8 @@ inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticH
             EdgeWeight triangleMainEdgeWeight = hypergraph.edgeWeight(edgeID);
             // Store the lowest cut leaving the triangles where the current edge is part of
             EdgeWeight lowestCutLeavingTriangles = triangleMainEdgeWeight;
+            // Store if we found any triangle (otherwise we do not have to check for VieCut pruning rule 4)
+            bool hasFoundAnyTriangle = false;
 
             // Go over the incident edges of the target to find the triangles
             for (EdgeID backwardEdgeID : hypergraph.incidentEdges(targetID))
@@ -858,17 +796,24 @@ inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticH
 
                 // Increment the lowest cut leaving the triangles
                 lowestCutLeavingTriangles += std::min(triangleForwardEdgeWeight, triangleBackwardEdgeWeight);
+                hasFoundAnyTriangle = true;
 
                 // Check VieCut pruning rule 3
-                // IMPORTANT: Usually we would need to verify that the nodeID (resp. targetID) has still other incident hyperedges apart from the current hyperedge,
+                // IMPORTANT: We would need to verify that the nodeID (resp. targetID) has still other incident hyperedges apart from the current hyperedge,
                 //            because otherwise the shifting idea of the rule does not work and the reduced hypergraph might have a larger mincut value.
-                //            However, since we update the mincut value before and after every pruning rule using the naive estimate, we still capture the correct mincut
+                //            However, this additional check is only necessary if we wan to find all minimum cuts. This is not necessary if we only compute the mincut value,
+                //            because we update the mincut value before and after every pruning rule using the naive estimate, i.e. we still capture the correct mincut
                 //            value and the increased mincut in the reduced hypergraph does not affect the result as we update the mincut only if we found a new lower value.
                 // IMPORTANT 2: Contrary to the pruning rule 2 of VieCut (cf. above), the inequalities do not have to be strict here, as we only allow nodes to be part of at most one contraction.
                 //              Nonetheless it remains open if enforcing strict inequalities allows nodes to be part of more than one contraction without breaking the rule,
                 //              as done for the adaptation of pruning rule 2 of VieCut (cf. above).
-                if (2 * (triangleMainEdgeWeight + triangleForwardEdgeWeight) >= weightedNodeDegrees[nodeID] &&
-                    2 * (triangleMainEdgeWeight + triangleBackwardEdgeWeight) >= weightedNodeDegrees[targetID])
+                //              HOWEVER: If we want to find all minimum cuts, we need to enforce strict inequalities, because otherwise it can happen that we destroy with
+                //              the contraction a mincut in favour of another mincut, i.e. we do not keep all minimum cuts.
+                EdgeWeight twiceForwardTriangleCut = 2 * (triangleMainEdgeWeight + triangleForwardEdgeWeight);
+                EdgeWeight twiceBackwardTriangleCut = 2 * (triangleMainEdgeWeight + triangleBackwardEdgeWeight);
+                if ((!findAllMincuts && twiceForwardTriangleCut >= weightedNodeDegrees[nodeID] && twiceBackwardTriangleCut >= weightedNodeDegrees[targetID]) ||
+                    (findAllMincuts && twiceForwardTriangleCut > weightedNodeDegrees[nodeID] && twiceBackwardTriangleCut > weightedNodeDegrees[targetID] &&
+                     weightedNodeDegrees[nodeID] > mincutEstimate && weightedNodeDegrees[targetID] > mincutEstimate))
                 {
 #ifdef SMHM_PARALLEL
                     // For the parallel version, we use a CAS operation to make sure that the nodes are not already contracted
@@ -892,7 +837,7 @@ inline StaticHypergraph Pruner::contract_triangle_hyperedges_of_size_two(StaticH
                 }
             }
             // Check VieCut pruning rule 4
-            if (lowestCutLeavingTriangles >= mincutEstimate)
+            if (hasFoundAnyTriangle && ((!findAllMincuts && lowestCutLeavingTriangles >= mincutEstimate) || (findAllMincuts && lowestCutLeavingTriangles > mincutEstimate)))
             {
                 contracted[nodeID] = true;
                 contracted[targetID] = true;

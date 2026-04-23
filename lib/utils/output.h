@@ -14,7 +14,7 @@
 #include "lib/utils/definitions.h"
 
 // Operator for the output of the ordering type
-std::ostream &operator<<(std::ostream &os, OrderingType orderingType)
+inline std::ostream &operator<<(std::ostream &os, OrderingType orderingType)
 {
     switch (orderingType)
     {
@@ -36,7 +36,7 @@ std::ostream &operator<<(std::ostream &os, OrderingType orderingType)
 }
 
 // Operator for the output of the ordering mode
-std::ostream &operator<<(std::ostream &os, OrderingMode orderingMode)
+inline std::ostream &operator<<(std::ostream &os, OrderingMode orderingMode)
 {
     switch (orderingMode)
     {
@@ -50,7 +50,7 @@ std::ostream &operator<<(std::ostream &os, OrderingMode orderingMode)
 }
 
 // Operator for the output of the label propagation mode
-std::ostream &operator<<(std::ostream &os, LabelPropagationMode labelPropagationMode)
+inline std::ostream &operator<<(std::ostream &os, LabelPropagationMode labelPropagationMode)
 {
     switch (labelPropagationMode)
     {
@@ -64,7 +64,7 @@ std::ostream &operator<<(std::ostream &os, LabelPropagationMode labelPropagation
 }
 
 // Operator for the output of the pruning mode
-std::ostream &operator<<(std::ostream &os, PruningMode pruningMode)
+inline std::ostream &operator<<(std::ostream &os, PruningMode pruningMode)
 {
     switch (pruningMode)
     {
@@ -78,7 +78,7 @@ std::ostream &operator<<(std::ostream &os, PruningMode pruningMode)
 }
 
 // Operator for the output of the ILP mode
-std::ostream &operator<<(std::ostream &os, ILPMode ilpMode)
+inline std::ostream &operator<<(std::ostream &os, ILPMode ilpMode)
 {
     switch (ilpMode)
     {
@@ -92,7 +92,7 @@ std::ostream &operator<<(std::ostream &os, ILPMode ilpMode)
 }
 
 // Operator for the output of the base solver
-std::ostream &operator<<(std::ostream &os, BaseSolver baseSolver)
+inline std::ostream &operator<<(std::ostream &os, BaseSolver baseSolver)
 {
     switch (baseSolver)
     {
@@ -106,7 +106,7 @@ std::ostream &operator<<(std::ostream &os, BaseSolver baseSolver)
 }
 
 // Operator for the output of the file format
-std::ostream &operator<<(std::ostream &os, mt_kahypar_file_format_type_t fileFormat)
+inline std::ostream &operator<<(std::ostream &os, mt_kahypar_file_format_type_t fileFormat)
 {
     switch (fileFormat)
     {
@@ -120,7 +120,7 @@ std::ostream &operator<<(std::ostream &os, mt_kahypar_file_format_type_t fileFor
 }
 
 // Operator for the output of the preset type
-std::ostream &operator<<(std::ostream &os, mt_kahypar_preset_type_t presetType)
+inline std::ostream &operator<<(std::ostream &os, mt_kahypar_preset_type_t presetType)
 {
     switch (presetType)
     {

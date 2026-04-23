@@ -1,0 +1,13 @@
+% Weighted simple example input for the hypercactus generator taken from "Edge-augmentation of hypergraphs"
+11 11 1
+1 1 2 10 11
+1 1 9 10 11
+2 3 4 5
+1 2 3
+1 2 9
+1 3 5
+1 5 6
+1 5 9
+1 6 7
+1 7 8
+1 8 9

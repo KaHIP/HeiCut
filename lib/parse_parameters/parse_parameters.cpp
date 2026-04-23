@@ -119,6 +119,41 @@ int ParseParams::check_for_help_or_errors(int argc, char **argv, const char *nam
     return 0;
 }
 
+// Parse the parameters for the hypercactus algorithm
+int ParseParams::parse_parameters_hypercactus(int argc, char **argv, HypercactusGeneratorConfig &config)
+{
+    // Get the name of the program
+    const char *nameOfProgram = argv[0];
+    // Get the base argument table
+    BaseArgtable baseArgtable;
+    std::vector<void *> argtable = baseArgtable.to_vector();
+
+    // Define the rest of the arguments
+    struct arg_str *outputFileName = arg_strn(NULL, NULL, "PATH_TO_OUTPUT", 1, 1, "Path to output file to store the generated hypercactus in HMETIS format.");
+    struct arg_lit *allowOutputFloatEdgeWeights = arg_lit0("f", "output_float_edge_weights", "Allow floating point edge weights in the output. Default: false.");
+    struct arg_lit *verbose = arg_lit0("v", "verbose", "Output additional information. Default: false.");
+    struct arg_end *end = arg_end(100);
+
+    // Add the rest of the arguments to the argument table
+    argtable.push_back(outputFileName);
+    argtable.push_back(allowOutputFloatEdgeWeights);
+    argtable.push_back(verbose);
+    argtable.push_back(end);
+
+    // Check if the help was requested or if there were any errors
+    if (check_for_help_or_errors(argc, argv, nameOfProgram, argtable, baseArgtable.help, end))
+        return 1;
+
+    // Extract the arguments
+    baseArgtable.extract_arguments(config);
+    config.outputFileName = outputFileName->sval[0]; // outputFileName is a required argument
+    config.allowOutputFloatEdgeWeights = (allowOutputFloatEdgeWeights->count > 0) ? true : DEFAULT_ALLOW_OUTPUT_FLOAT_EDGE_WEIGHTS;
+    config.verbose = (verbose->count > 0) ? true : DEFAULT_VERBOSE;
+
+    arg_freetable(argtable.data(), argtable.size());
+    return 0;
+}
+
 // Parse the parameters for the label propagation
 int ParseParams::parse_parameters_kernelizer(int argc, char **argv, KernelizerConfig &config)
 {

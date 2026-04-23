@@ -38,6 +38,8 @@ private:
     KernelizerConfig config;
     // Store the current estimate of the minimum edge cut
     CutValue minEdgeCut;
+    // Store the cluster IDs of the nodes of the current hypergraph (i.e. the clusters used to contract the hypergraph)
+    mt_kahypar::parallel::scalable_vector<ClusterID> clusterID;
 
     // Update the minimum edge cut value (if it is smaller than the current estimate)
     // NB: We only do this if the coarsening has NOT reduced the entire hypergraph to a single hypernode
@@ -49,18 +51,28 @@ private:
     NodeIndex get_current_num_nodes(const StaticHypergraph &hypergraph);
 
     // Whether we can stop early
-    bool can_stop_early(const StaticHypergraph &hypergraph);
+    bool can_stop_early(const StaticHypergraph &hypergraph, const bool findAllMincuts = false);
 
     // Print the statistics of the current hypergraph
     double print_stats_and_return_used_time(const StaticHypergraph &hypergraph,
                                             const NodeIndex initialNumNodes,
                                             const EdgeIndex initialNumEdges,
-                                            timer &t,
                                             std::string suffix,
                                             std::string timeDescription);
 
+    // Update the mapping from the nodes of the original hypergraph to the nodes of the contracted hypergraph (i.e. to be able to uncontract the hypergraph)
+    void update_mapping(std::vector<ClusterID> *mapping, mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID);
+
 public:
     Kernelizer(KernelizerConfig config);
+
+    // Apply kernelization to the hypergraph and return whether we can stop early (i.e. mincut can already be determined)
+    bool apply_kernelization(StaticHypergraph &hypergraph,
+                             const NodeIndex initialNumNodes,
+                             const EdgeIndex initialNumEdges,
+                             double &totalComputingTime,
+                             const bool findAllMincuts = false,
+                             std::vector<ClusterID> *mapping = nullptr);
 
     // Compute the minimum cut of the hypergraph using kernelization
     KernelizerResult compute_mincut(StaticHypergraph &hypergraph, const NodeIndex initialNumNodes, const EdgeIndex initialNumEdges);
@@ -90,10 +102,10 @@ inline NodeIndex Kernelizer::get_current_num_nodes(const StaticHypergraph &hyper
 }
 
 // Whether we can stop early
-inline bool Kernelizer::can_stop_early(const StaticHypergraph &hypergraph)
+inline bool Kernelizer::can_stop_early(const StaticHypergraph &hypergraph, const bool findAllMincuts)
 {
-    // Stop early if the current estimate is already 0
-    if (minEdgeCut == 0)
+    // Stop early if the current estimate is already 0 (only if we do not want to find all minimum cuts)
+    if (minEdgeCut == 0 && !findAllMincuts)
     {
         if (config.verbose)
             std::cout << "Mincut is already 0, no base solver necessary." << std::endl;
@@ -126,7 +138,6 @@ inline bool Kernelizer::can_stop_early(const StaticHypergraph &hypergraph)
 inline double Kernelizer::print_stats_and_return_used_time(const StaticHypergraph &hypergraph,
                                                            const NodeIndex initialNumNodes,
                                                            const EdgeIndex initialNumEdges,
-                                                           timer &t,
                                                            std::string suffix,
                                                            std::string timeDescription)
 {
@@ -147,6 +158,17 @@ inline double Kernelizer::print_stats_and_return_used_time(const StaticHypergrap
         std::cout << "===================================================" << std::endl;
     }
     return elapsedTime;
+}
+
+// Update the mapping from the nodes of the original hypergraph to the nodes of the contracted hypergraph (i.e. to be able to uncontract the hypergraph)
+inline void Kernelizer::update_mapping(std::vector<ClusterID> *mapping, mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID)
+{
+    if (mapping == nullptr)
+        return;
+
+    NodeIndex numNodesInOriginalHypergraph = (*mapping).size();
+    for (NodeIndex i = 0; i < numNodesInOriginalHypergraph; ++i)
+        (*mapping)[i] = clusterID[(*mapping)[i]];
 }
 
 #endif // end of SMHM_KERNELIZER_H

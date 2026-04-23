@@ -29,7 +29,7 @@
 | | |
 |:--|:--|
 | **What it solves** | Exact minimum cut in weighted and unweighted hypergraphs |
-| **Techniques** | FPT kernelization, provably exact reduction rules, label propagation coarsening |
+| **Techniques** | FPT kernelization, provably exact reduction rules, label propagation coarsening, hypercactus generation |
 | **Solvers** | HeiCut (kernelization + exact solve), Relaxed BIP (Gurobi ILP), Trimmer, vertex-ordering solvers |
 | **Requires** | C++17 compiler (GCC 7+), CMake 3.16+, Boost, oneTBB, hwloc, SparseHash, Gurobi, Mt-KaHyPar |
 
@@ -102,6 +102,7 @@ The pipeline:
 | `heicut_submodular` | Vertex-ordering solver |
 | `heicut_submodular_parallel` | Parallel vertex-ordering solver |
 | `heicut_dumbbell_generator` | Synthetic dumbbell hypergraph generator |
+| `heicut_hypercactus_generator` | Hypercactus generator for representing all minimum cuts |
 | `heicut_kcore_generator` | (k,2)-core benchmark generator |
 
 All executables support `--help` to list available arguments.
@@ -158,7 +159,17 @@ All executables support `--help` to list available arguments.
 
 # Generate a dumbbell hypergraph
 ./build/heicut_dumbbell_generator PATH_TO_OUTPUT
+
+# Generate a hypercactus representation of all minimum cuts
+./build/heicut_hypercactus_generator PATH_TO_HYPERGRAPH PATH_TO_OUTPUT
 ```
+
+The hypercactus generator first computes the exact minimum cut value, then applies mapping-preserving kernelization and canonical decomposition to output a compact representation of all minimum cuts. It writes two files:
+
+- `PATH_TO_OUTPUT.hypercactus`: the hypercactus in hMETIS-style format
+- `PATH_TO_OUTPUT.hypercactus.mapping`: one hypercactus node id per original hypergraph vertex
+
+Like the solver binaries, it supports hMETIS/METIS input options, `--unweighted`, `--seed`, `--preset_type`, and `--verbose`. Use `--output_float_edge_weights` if the output may contain half-integral hypercactus edge weights.
 
 ---
 

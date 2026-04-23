@@ -9,6 +9,7 @@
 #ifndef SMHM_LABELPROPAGATION_H
 #define SMHM_LABELPROPAGATION_H
 
+#include <cassert>
 #include <vector>
 // Own headers
 #include "lib/utils/definitions.h"
@@ -33,7 +34,7 @@ public:
     LabelPropagation(const IterationIndex numIterations, const LabelPropagationMode mode, const NodeIndex numPinsToSample);
 
     // Perform the label propagation and the contraction of the label clusters
-    StaticHypergraph propagate_and_contract_labels(StaticHypergraph &hypergraph);
+    StaticHypergraph propagate_and_contract_labels(StaticHypergraph &hypergraph, mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID);
 
     // Get the score of an edge (which contributes to the score between a node and a cluster)
     ScoreValue get_score_of_edge(const StaticHypergraph &hypergraph, const EdgeID edgeID);
@@ -52,7 +53,7 @@ inline ScoreValue LabelPropagation::get_score_of_edge(const StaticHypergraph &hy
 }
 
 // Perform the label propagation and the contraction of the label clusters
-inline StaticHypergraph LabelPropagation::propagate_and_contract_labels(StaticHypergraph &hypergraph)
+inline StaticHypergraph LabelPropagation::propagate_and_contract_labels(StaticHypergraph &hypergraph, mt_kahypar::parallel::scalable_vector<ClusterID> &clusterID)
 {
     // Get the initial number of nodes and the initial number of edges of the hypergraph, since we use the node/edge id indices.
     // Besides, for static hypergraphs the length of the cluster id vector must be equal to the initial number of nodes.
@@ -61,7 +62,7 @@ inline StaticHypergraph LabelPropagation::propagate_and_contract_labels(StaticHy
 
     // Initialize the cluster ids (= labels) of the nodes to contain 0, 1, 2, ..., n-1
     // NB: We purposefully ignore race conditions here in the parallel version
-    mt_kahypar::parallel::scalable_vector<ClusterID> clusterID(initialNumNodes);
+    assert(clusterID.size() == initialNumNodes);
     std::iota(clusterID.begin(), clusterID.end(), 0);
 
     // Initialize the random permutation of the nodes

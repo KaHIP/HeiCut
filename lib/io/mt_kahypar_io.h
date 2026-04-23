@@ -16,6 +16,8 @@
 #include "mt-kahypar-library/libmtkahypar.h"
 #include "mt-kahypar/partition/context_enum_classes.h"
 #include "mt-kahypar/io/hypergraph_factory.h"
+#include "mt-kahypar/datastructures/dynamic_graph_factory.h"
+#include "mt-kahypar/datastructures/static_graph_factory.h"
 
 class MtKaHyParIO
 {
@@ -48,7 +50,7 @@ public:
         const size_t numAvailableThreads = std::thread::hardware_concurrency();
 
         // Set the number of threads to use
-        config.numThreads  = (config.numThreads > 0 && config.numThreads <= numAvailableThreads) ? config.numThreads : numAvailableThreads;
+        config.numThreads = (config.numThreads > 0 && config.numThreads <= numAvailableThreads) ? config.numThreads : numAvailableThreads;
 
         // Initialize thread pool
         mt_kahypar_initialize_thread_pool(config.numThreads, true /* activate interleaved NUMA allocation policy */);
@@ -85,6 +87,50 @@ public:
         try
         {
             return mt_kahypar::io::readInputFile(file_name, config, instance, format, stable_construction, remove_single_pin_hes);
+        }
+        catch (std::exception &ex)
+        {
+            LOG << ex.what();
+        }
+        return mt_kahypar_hypergraph_t{nullptr, NULLPTR_HYPERGRAPH};
+    }
+
+    // Method taken from mt-kahypar/lib/libmtkahypar.cpp
+    // Changes:
+    //  - Additional possibility to specify whether to use a stable construction of incident edges
+    static mt_kahypar_hypergraph_t mt_kahypar_create_graph(const mt_kahypar_preset_type_t preset,
+                                                           const mt_kahypar_hypernode_id_t num_vertices,
+                                                           const mt_kahypar_hyperedge_id_t num_edges,
+                                                           const mt_kahypar_hypernode_id_t *edges,
+                                                           const mt_kahypar_hyperedge_weight_t *edge_weights,
+                                                           const mt_kahypar_hypernode_weight_t *vertex_weights,
+                                                           const bool stable_construction_of_incident_edges = false)
+    {
+        // Transform adjacence array into adjacence list
+        mt_kahypar::vec<std::pair<mt_kahypar::HypernodeID, mt_kahypar::HypernodeID>> edge_vector(num_edges);
+        tbb::parallel_for<mt_kahypar::HyperedgeID>(0, num_edges, [&](const mt_kahypar::HyperedgeID &he)
+                                                   { edge_vector[he] = std::make_pair(edges[2 * he], edges[2 * he + 1]); });
+
+        try
+        {
+            switch (preset)
+            {
+            case DETERMINISTIC:
+            case LARGE_K:
+            case DEFAULT:
+            case QUALITY:
+                return mt_kahypar_hypergraph_t{
+                    reinterpret_cast<mt_kahypar_hypergraph_s *>(new mt_kahypar::ds::StaticGraph(
+                        mt_kahypar::ds::StaticGraphFactory::construct_from_graph_edges(num_vertices, num_edges,
+                                                                       edge_vector, edge_weights, vertex_weights, stable_construction_of_incident_edges))),
+                    STATIC_GRAPH};
+            case HIGHEST_QUALITY:
+                return mt_kahypar_hypergraph_t{
+                    reinterpret_cast<mt_kahypar_hypergraph_s *>(new mt_kahypar::ds::DynamicGraph(
+                        mt_kahypar::ds::DynamicGraphFactory::construct_from_graph_edges(num_vertices, num_edges,
+                                                                        edge_vector, edge_weights, vertex_weights, stable_construction_of_incident_edges))),
+                    DYNAMIC_GRAPH};
+            }
         }
         catch (std::exception &ex)
         {

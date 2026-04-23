@@ -64,6 +64,13 @@ struct DumbbellGeneratorConfig
     const char *outputFileName;
 };
 
+struct HypercactusGeneratorConfig : BaseConfig
+{
+    bool verbose;
+    bool allowOutputFloatEdgeWeights;
+    const char *outputFileName;
+};
+
 struct KCoreGeneratorConfig : BaseConfig
 {
     const char *outputFileName;
@@ -80,6 +87,9 @@ public:
 
     // Check if the help was requested or if there were any errors
     static int check_for_help_or_errors(int argc, char **argv, const char *nameOfProgram, std::vector<void *> &argtable, struct arg_lit *help, struct arg_end *end);
+
+    // Parse the parameters for the hypercactus algorithm
+    static int parse_parameters_hypercactus(int argc, char **argv, HypercactusGeneratorConfig &config);
 
     // Parse the parameters for the kernelizer of the mininum cut value
     static int parse_parameters_kernelizer(int argc, char **argv, KernelizerConfig &config);

@@ -19,7 +19,7 @@
 #include "mt-kahypar/datastructures/dynamic_hypergraph.h"
 
 SubmodularMincut::SubmodularMincut(const NodeIndex initialNumNodes,
-                                   const EdgeIndex numEdges,
+                                   const EdgeIndex initialNumEdges,
                                    const OrderingType orderingType,
                                    const OrderingMode orderingMode,
                                    const bool hasWeightedEdges,
@@ -28,24 +28,27 @@ SubmodularMincut::SubmodularMincut(const NodeIndex initialNumNodes,
     : numThreads(numThreads),
       orderingMode(orderingMode),
       nodeOrderingPerThread(numThreads, std::vector<NodeID>(initialNumNodes)),
-      markedEdgePinsPerThread(numThreads, std::vector<std::pair<NodeIndex, NodeID>>(numEdges, std::make_pair(0, std::numeric_limits<NodeID>::max()))),
-      ordererPerThread(numThreads)
+      markedEdgePinsPerThread(numThreads, std::vector<MarkedEdgePins>(initialNumEdges, {0, std::numeric_limits<NodeID>::max(), false, false})),
+      ordererPerThread(numThreads),
+      orderingTypePerThread(numThreads)
 {
     // Create a list of all possible ordering types (only if the ordering type is ALL)
     constexpr OrderingType discreteOrderingTypes[] = {OrderingType::TIGHT, OrderingType::QUEYRANNE, OrderingType::MA};
 
     auto initializeThread = [&](size_t threadIndex)
-    { 
+    {
         MersenneTwister threadRandEngine(RandomFunctions::get_seed() + threadIndex);
         OrderingType threadOrderingType = (orderingType == OrderingType::MIX_DISCRETE) ? discreteOrderingTypes[threadIndex % 3] : orderingType;
-        // IMPORTANT: Even if we perform pairwise contractions on the dynamic hypergraph, we can still guarantee that if the original hypergraph is unweighted, 
+        // IMPORTANT: Even if we perform pairwise contractions on the dynamic hypergraph, we can still guarantee that if the original hypergraph is unweighted,
         //            every contracted version is also unweighted. This is because contrary to the static hypergraph, the dynamic hypergraph does not
         //            merge parallel edges or delete single-pin edges during contractions. Thus, the unweighted node degree is identical to the weighted node degree
         //            and there exists as many parallel hyperedges (with weight 1) as the weight of the merged hyperedge would be.
         if (threadOrderingType == OrderingType::MIX_UNIFORM)
-            ordererPerThread[threadIndex] = std::make_unique<Orderer<DynamicHypergraph, double>>(initialNumNodes, numEdges, threadOrderingType, hasWeightedEdges, threadRandEngine, (double)threadIndex / (numThreads - 1));
-        else 
-            ordererPerThread[threadIndex] = std::make_unique<Orderer<DynamicHypergraph, EdgeWeight>>(initialNumNodes, numEdges, threadOrderingType, hasWeightedEdges, threadRandEngine); };
+            ordererPerThread[threadIndex] = std::make_unique<Orderer<DynamicHypergraph, double>>(initialNumNodes, initialNumEdges, threadOrderingType, hasWeightedEdges, threadRandEngine, (double)threadIndex / (numThreads - 1));
+        else
+            ordererPerThread[threadIndex] = std::make_unique<Orderer<DynamicHypergraph, EdgeWeight>>(initialNumNodes, initialNumEdges, threadOrderingType, hasWeightedEdges, threadRandEngine);
+        orderingTypePerThread[threadIndex] = threadOrderingType;
+    };
 
     // Create a vector to hold the threads that will initialize the orderers
     std::vector<std::thread> initializingThreads;
@@ -65,10 +68,11 @@ SubmodularMincut::SubmodularMincut(const NodeIndex initialNumNodes,
 #else
     : orderingMode(orderingMode),
       nodeOrdering(initialNumNodes),
-      markedEdgePins(numEdges, std::make_pair(0, std::numeric_limits<NodeID>::max())),
+      markedEdgePins(initialNumEdges, {0, std::numeric_limits<NodeID>::max(), false, false}),
       // IMPORTANT: Even if we perform pairwise contractions on the dynamic hypergraph, we can still guarantee that if the original hypergraph is unweighted,
       //            every contracted version is also unweighted. This is because contrary to the static hypergraph, the dynamic hypergraph does not
       //            merge parallel edges or delete single-pin edges during contractions. Thus, the unweighted node degree is identical to the weighted node degree
       //            and there exists as many parallel hyperedges (with weight 1) as the weight of the merged hyperedge would be.
-      orderer(initialNumNodes, numEdges, orderingType, hasWeightedEdges, RandomFunctions::get_random_engine()) {};
+      orderer(initialNumNodes, initialNumEdges, orderingType, hasWeightedEdges, RandomFunctions::get_random_engine()),
+      orderingType(orderingType) {};
 #endif

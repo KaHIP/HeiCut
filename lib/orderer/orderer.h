@@ -41,8 +41,10 @@ private:
     KeyType orderingWeight;
     // Whether the binary heap should be used
     const bool useBinaryHeap;
-    // Number of edges in the hypergraph
-    const EdgeIndex numEdges;
+    // Whether the orderer works on a static hypergraph
+    bool worksOnStaticHypergraph = false;
+    // Initial number of edges in the hypergraph
+    const EdgeIndex initialNumEdges;
     // Initial number of nodes in the hypergraph
     const NodeIndex initialNumNodes;
     // Count the number of nodes added to the ordering
@@ -75,7 +77,7 @@ private:
     NodeID reset_priority_queue(const Hypergraph &hypergraph, const NodeIndex numNodes);
 
 public:
-    Orderer(const NodeIndex initialNumNodes, const EdgeIndex numEdges, const OrderingType orderingType, const bool hasWeightedEdges, MersenneTwister randEngine, const KeyType orderingWeight = 0);
+    Orderer(const NodeIndex initialNumNodes, const EdgeIndex initialNumEdges, const OrderingType orderingType, const bool hasWeightedEdges, MersenneTwister randEngine, const KeyType orderingWeight = 0);
 
     // Compute the ordering of the nodes of a hypergraph
     // The result is stored in the vectors nodeOrdering, edgeHeadOrdering, and edgeHead
@@ -88,16 +90,17 @@ public:
 
 template <typename Hypergraph, typename KeyType>
 Orderer<Hypergraph, KeyType>::Orderer(const NodeIndex initialNumNodes,
-                                      const EdgeIndex numEdges,
+                                      const EdgeIndex initialNumEdges,
                                       const OrderingType orderingType,
                                       const bool hasWeightedEdges,
                                       MersenneTwister randEngine,
                                       const KeyType orderingWeight)
     : initialNumNodes(initialNumNodes),
-      numEdges(numEdges),
+      initialNumEdges(initialNumEdges),
       orderingType(orderingType),
-      edgeNumPinsAdded(numEdges, 0),
+      edgeNumPinsAdded(initialNumEdges, 0),
       orderingWeight(orderingWeight),
+      worksOnStaticHypergraph(std::is_same<Hypergraph, StaticHypergraph>::value),
       useBinaryHeap(hasWeightedEdges || std::is_floating_point<KeyType>::value),
       // NB: It is important to use the initial number of nodes for the allocation here,
       //     because we use the node ID as the index of the vector, which is might be larger
@@ -280,7 +283,8 @@ inline NodeID Orderer<Hypergraph, KeyType>::reset_priority_queue(const Hypergrap
 
         // Ignore disabled nodes
         // NB: numNodes is exactly the number of non-disabled nodes
-        if (!hypergraph.nodeIsEnabled(nodeID))
+        // NB2: For static hypergraphs, the node IDs are remapped to the range [0, numNodes - 1], so we need to use a different check
+        if ((worksOnStaticHypergraph && nodeID >= numNodes) || !hypergraph.nodeIsEnabled(nodeID))
             continue;
 
         // Set the start node if it is not set yet (i.e. the start node is the first non-disabled node in the permutation)

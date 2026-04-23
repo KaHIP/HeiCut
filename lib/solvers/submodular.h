@@ -23,11 +23,21 @@
 #include <condition_variable>
 #endif
 
+// Result of the submodular min-cut algorithm
 struct SubmodularMincutResult
 {
     CutValue minEdgeCut;
     IterationIndex numIterations;
     double meanContractionsPerIteration;
+};
+
+// Keeps track of the number of marked pins of an edge for parent node (i.e. last node in a specific ordering). Only used when orderingMode is MULTI.
+struct MarkedEdgePins
+{
+    NodeIndex numMarkedPins;
+    NodeID parentNodeID;
+    bool isHarmlessEdge;
+    bool isPartOfNodeToContractIsolatingCut;
 };
 
 class SubmodularMincut
@@ -40,6 +50,10 @@ private:
     // NB: We use a thread-indexed vector instead of enumerable_thread_specific so that we can
     //     reuse the data structures for multiple .solve() calls
     std::vector<std::unique_ptr<OrdererWrapper<DynamicHypergraph>>> ordererPerThread;
+    // Store the ordering type for each thread
+    // NB: We use a thread-indexed vector instead of enumerable_thread_specific so that we can
+    //     reuse the data structures for multiple .solve() calls
+    std::vector<OrderingType> orderingTypePerThread;
     // Store the ordering of the nodes for each thread
     // NB: We use a thread-indexed vector instead of enumerable_thread_specific so that we can
     //     reuse the data structures for multiple .solve() calls
@@ -50,7 +64,7 @@ private:
     //     since we exactly know when to to reset the values in the vector.
     // NB2: We use a thread-indexed vector instead of enumerable_thread_specific so that we can
     //     reuse the data structures for multiple .solve() calls
-    std::vector<std::vector<std::pair<NodeIndex, NodeID>>> markedEdgePinsPerThread;
+    std::vector<std::vector<MarkedEdgePins>> markedEdgePinsPerThread;
     // Store the number of threads
     const size_t numThreads;
     // Store the threads (excluding the main thread)
@@ -76,14 +90,16 @@ private:
     // NB: The first element of the pair is the total number of marked pins of the hyperedge (whose id is equal to index),
     //     the second element is the current last node in the ordering. This allows us to use the same vector for all hyperedges,
     //     since we exactly know when to to reset the values in the vector.
-    std::vector<std::pair<NodeIndex, NodeID>> markedEdgePins;
+    std::vector<MarkedEdgePins> markedEdgePins;
+    // Store the ordering type
+    const OrderingType orderingType;
 #endif
 
     // Compute the cut of the phase (i.e. the cut edges when isolating the last node in the ordering)
-    CutValue compute_cut_of_phase(DynamicHypergraph &hypergraph, const NodeID nodeID, std::vector<std::pair<NodeIndex, NodeID>> &markedEdgePins);
+    CutValue compute_cut_of_phase(DynamicHypergraph &hypergraph, const NodeID nodeID);
 
     // Try to contract further nodes in the ordering after contracting the last two nodes
-    CutValue try_contracting_further_nodes(DynamicHypergraph &hypergraph, const NodeIndex numNodes, const CutValue cutOfThePhase, std::vector<NodeID> &nodeOrdering, std::vector<std::pair<NodeIndex, NodeID>> &markedEdgePins);
+    CutValue try_contracting_further_nodes(DynamicHypergraph &hypergraph, const NodeIndex numNodes, const CutValue cutOfThePhase, const OrderingType orderingType, std::vector<NodeID> &nodeOrdering, std::vector<MarkedEdgePins> &markedEdgePins);
 
 #ifdef SMHM_PARALLEL
     // Barrier function to synchronize threads
@@ -106,16 +122,13 @@ public:
 };
 
 // Compute the cut of the phase (i.e. the cut edges when isolating the last node in the ordering)
-inline CutValue SubmodularMincut::compute_cut_of_phase(DynamicHypergraph &hypergraph, const NodeID nodeID, std::vector<std::pair<NodeIndex, NodeID>> &markedEdgePins)
+inline CutValue SubmodularMincut::compute_cut_of_phase(DynamicHypergraph &hypergraph, const NodeID nodeID)
 {
     // Get the cut of the phase (i.e. the cut edges when isolating the last node in the ordering)
     CutValue cutOfThePhase = 0;
     for (EdgeID edgeID : hypergraph.incidentEdges(nodeID))
         if (hypergraph.edgeIsEnabled(edgeID) && hypergraph.edgeSize(edgeID) > 1)
-        {
             cutOfThePhase += hypergraph.edgeWeight(edgeID);
-            markedEdgePins[edgeID] = std::make_pair(1, nodeID);
-        }
     return cutOfThePhase;
 }
 
@@ -155,13 +168,15 @@ inline void SubmodularMincut::solve_in_parallel(const size_t threadIndex, Dynami
         // Get the orderer for the thread
         OrdererWrapper<DynamicHypergraph> &orderer = *ordererPerThread[threadIndex];
         // Get the marked edges for the thread
-        std::vector<std::pair<NodeIndex, NodeID>> &markedEdgePins = markedEdgePinsPerThread[threadIndex];
+        std::vector<MarkedEdgePins> &markedEdgePins = markedEdgePinsPerThread[threadIndex];
+        // Get the ordering type for the thread
+        const OrderingType orderingType = orderingTypePerThread[threadIndex];
         // Store whether the contraction could be registered
         bool couldRegisterContraction = false;
         // Compute the ordering of the nodes in hypergraph (depending on the selected ordering type)
         orderer.compute_ordering(hypergraph, numNodes, &nodeOrdering, nullptr, nullptr);
         // Compute the cut of the phase (i.e. the cut edges when isolating the last node in the ordering)
-        CutValue cutOfThePhase = compute_cut_of_phase(hypergraph, nodeOrdering[numNodes - 1], markedEdgePins);
+        CutValue cutOfThePhase = compute_cut_of_phase(hypergraph, nodeOrdering[numNodes - 1]);
         // Contract the last two nodes in the ordering (if possible)
         if (hypergraph.registerContraction(nodeOrdering[numNodes - 2], nodeOrdering[numNodes - 1]))
         {
@@ -171,7 +186,7 @@ inline void SubmodularMincut::solve_in_parallel(const size_t threadIndex, Dynami
                 // is entirely included in the edge list of the node before it in the ordering, because then the node
                 // ordering will not change upon contraction and we can contract also the third last node in the ordering
                 // We do this over and over again until the edge lists are not entirely included anymore
-                cutOfThePhase = try_contracting_further_nodes(hypergraph, numNodes, cutOfThePhase, nodeOrdering, markedEdgePins);
+                cutOfThePhase = try_contracting_further_nodes(hypergraph, numNodes, cutOfThePhase, orderingType, nodeOrdering, markedEdgePins);
 
             // Update the minimum edge cut (if necessary)
             // NB: We need to use a local variable minEdgeCutOfThread here and repeatedly try to update the global minEdgeCut to avoid race conditions
@@ -214,10 +229,12 @@ inline void SubmodularMincut::solve_in_parallel(const size_t threadIndex, Dynami
 #endif
 
 // Try to contract further nodes in the ordering after contracting the last two nodes
-inline CutValue SubmodularMincut::try_contracting_further_nodes(DynamicHypergraph &hypergraph, const NodeIndex numNodes, const CutValue cutOfThePhase, std::vector<NodeID> &nodeOrdering, std::vector<std::pair<NodeIndex, NodeID>> &markedEdgePins)
+inline CutValue SubmodularMincut::try_contracting_further_nodes(DynamicHypergraph &hypergraph, const NodeIndex numNodes, const CutValue cutOfThePhase, const OrderingType orderingType, std::vector<NodeID> &nodeOrdering, std::vector<MarkedEdgePins> &markedEdgePins)
 {
     // Store the current cut of the phase
     CutValue currentCutOfThePhase = cutOfThePhase;
+    // Store the lowest cut of the phase that we have seen
+    CutValue lowestCutOfThePhase = cutOfThePhase;
     // Store the index of the node in the ordering for which we check if its edge list entirely convers the edge list of the (contracted) nodes coming AFTER it
     NodeIndex nextNodeIndex = numNodes - 2;
     // Get the degree of all of the (contracted) nodes coming AFTER the nextNodeIndex in the ordering
@@ -225,7 +242,10 @@ inline CutValue SubmodularMincut::try_contracting_further_nodes(DynamicHypergrap
     EdgeIndex currentDegree = 0;
     for (EdgeID edgeID : hypergraph.incidentEdges(nodeOrdering[numNodes - 1]))
         if (hypergraph.edgeIsEnabled(edgeID) && hypergraph.edgeSize(edgeID) > 1)
+        {
+            markedEdgePins[edgeID] = {1, nodeOrdering[numNodes - 1], false, false};
             currentDegree++;
+        }
 
     // Try to check for further contractions
     while (nextNodeIndex > 0)
@@ -236,20 +256,67 @@ inline CutValue SubmodularMincut::try_contracting_further_nodes(DynamicHypergrap
         EdgeIndex nextDegree = currentDegree;
         // Store the number of shared edges between the node at nextNodeIndex and the (contracted) nodes coming AFTER it in the ordering
         EdgeIndex numSharedEdges = 0;
+        // Store the number of harmless edges, i.e. edges that are NOT incident to the node at nextNodeIndex BUT to the (contracted) nodes coming AFTER it in the ordering
+        // and still do not change the ordering upon contraction. For the tight ordering, these are exactly the edges that are incident to the node at nextNodeIndex - 1 or to
+        // the node at nextNodeIndex - 2. Note that for the latter, the ordering actually might change after contracting the node at nextNodeIndex with the (contracted) nodes coming
+        // after it, BUT only for the last two nodes, i.e. the cut of the phase might be the isolating cut of the node at nextNodeIndex - 1. Since every isolating cut is an upper bound
+        // of the mincut, we handle this by simply ALWAYS storing the value of this isolating cut if it is lower than lowestCutOfThePhase (even if not needed)
+        // For any other ordering, we need the additional constraint that the harmless edge must not have any pin that comes before the node at nextNodeIndex - 2 in the ordering,
+        // i.e. either all except one pin must be marked (directly implies in the loop below that the unmarked pin is either nextNodeIndex - 1 or nextNodeIndex - 2) or all but two pins
+        // are unmarked, where the two unmarked pins must be exactly the nodes at nextNodeIndex - 1 and at nextNodeIndex - 2 (which is handled by isPartOfNodeToContractIsolatingCut).
+        EdgeIndex numHarmlessEdges = 0;
+        CutValue nodeToContractIsolatingCut = 0;
+        // Always look a nextNodeIndex - 1 and nextNodeIndex - 2 if nextNodeIndex is large enough (i.e. we do not get negative indices)
+        NodeIndex limit = (nextNodeIndex > 1) ? 2 : 1;
+        for (NodeIndex i = 1; i <= limit; i++)
+            for (EdgeID edgeID : hypergraph.incidentEdges(nodeOrdering[nextNodeIndex - i]))
+                if (hypergraph.edgeIsEnabled(edgeID) && hypergraph.edgeSize(edgeID) > 1)
+                {
+                    // Store the isolating cut only for the node to contract (i.e. the node at nextNodeIndex - 1)
+                    if (i == 1)
+                    {
+                        nodeToContractIsolatingCut += hypergraph.edgeWeight(edgeID);
+                        markedEdgePins[edgeID].isPartOfNodeToContractIsolatingCut = true;
+                    }
+                    if (markedEdgePins[edgeID].parentNodeID == nodeOrdering[numNodes - 1] &&
+                        !markedEdgePins[edgeID].isHarmlessEdge &&
+                        (orderingType == OrderingType::TIGHT ||
+                        markedEdgePins[edgeID].numMarkedPins + (markedEdgePins[edgeID].isPartOfNodeToContractIsolatingCut ? 1 : 0)  == hypergraph.edgeSize(edgeID) - 1))
+                    {
+                        numHarmlessEdges++;
+                        markedEdgePins[edgeID].isHarmlessEdge = true;
+                    }
+                }
+        if (nodeToContractIsolatingCut < lowestCutOfThePhase)
+            lowestCutOfThePhase = nodeToContractIsolatingCut;
+
         for (EdgeID edgeID : hypergraph.incidentEdges(nodeOrdering[nextNodeIndex]))
             if (hypergraph.edgeIsEnabled(edgeID) && hypergraph.edgeSize(edgeID) > 1)
                 // Check if the the edge is marked
-                if (markedEdgePins[edgeID].second == nodeOrdering[numNodes - 1])
+                if (markedEdgePins[edgeID].parentNodeID == nodeOrdering[numNodes - 1])
                 {
                     // If so, increase the number of shared edges and the number of marked pins of the edge
                     numSharedEdges++;
-                    markedEdgePins[edgeID].first++;
+                    markedEdgePins[edgeID].numMarkedPins++;
+                    // If the edge is harmless, we need to decrease the number of harmless edges, since it is now counted as a shared edge (this can only happen for the tight ordering)
+                    if (markedEdgePins[edgeID].isHarmlessEdge)
+                    {
+                        numHarmlessEdges--;
+                        markedEdgePins[edgeID].isHarmlessEdge = false;
+                    }
+                    // For all orderings except the MA ordering (i.e. all orderings including somehow the tight ordering), if an edge is shared between the node at nextNodeIndex and
+                    // the (contracted) nodes coming AFTER it, then the contraction might change the connectivity and thus the ordering.
+                    // Exception: If one of the pins of the edge is the node at nextNodeIndex - 1 or at nextNodeIndex - 2 (i.e. the edge is harmless), we can still continue, since
+                    //            the change in the connectivity is already properly handled. Therefore, we use an else, i.e. we guarantee that the edge was not previously marked as
+                    //            harmless and thus it is not incident to the node at nextNodeIndex - 1 or at nextNodeIndex - 2.
+                    else if (orderingType != OrderingType::MA)
+                        return lowestCutOfThePhase;
                     // If all pins of the edge are marked, we need to decrease the cut of the phase since the edge will disappear upon contraction
-                    if (hypergraph.edgeSize(edgeID) == markedEdgePins[edgeID].first)
+                    else if (markedEdgePins[edgeID].numMarkedPins == hypergraph.edgeSize(edgeID))
                     {
                         nextCutOfThePhase -= hypergraph.edgeWeight(edgeID);
                         nextDegree--;
-                        markedEdgePins[edgeID] = std::make_pair(0, std::numeric_limits<NodeID>::max());
+                        markedEdgePins[edgeID] = {0, std::numeric_limits<NodeID>::max(), false, false};
                     }
                 }
                 else
@@ -257,21 +324,25 @@ inline CutValue SubmodularMincut::try_contracting_further_nodes(DynamicHypergrap
                     // If the edge is not marked, we need to increase the cut of the phase since the edge will be cut upon contraction
                     nextCutOfThePhase += hypergraph.edgeWeight(edgeID);
                     nextDegree++;
-                    markedEdgePins[edgeID] = std::make_pair(1, nodeOrdering[numNodes - 1]);
+                    markedEdgePins[edgeID] = {1, nodeOrdering[numNodes - 1], false, false};
                 }
+        // Make sure that the number of shared edges and harmless edges does not exceed the current degree
+        assert(numSharedEdges + numHarmlessEdges <= currentDegree);
         // Stop if the edge list of the node at nextNodeIndex does not entirely cover the edge list of the (contracted) nodes coming AFTER it
-        if (numSharedEdges != currentDegree)
+        if (numSharedEdges + numHarmlessEdges != currentDegree)
             break;
         // Stop if the contraction could not be registered
         if (!hypergraph.registerContraction(nodeOrdering[nextNodeIndex - 1], nodeOrdering[nextNodeIndex]))
             break;
-        // If the contraction could be registered, update the cut of the phase (if necessary) and the degree
-        currentCutOfThePhase = std::min(currentCutOfThePhase, nextCutOfThePhase);
+        // If the contraction could be registered, update the cut of the phase and the degree
+        currentCutOfThePhase = nextCutOfThePhase;
+        if (currentCutOfThePhase < lowestCutOfThePhase)
+            lowestCutOfThePhase = currentCutOfThePhase;
         currentDegree = nextDegree;
         --nextNodeIndex;
     }
-    // Return the cut of the phase
-    return currentCutOfThePhase;
+    // Return the lowest cut of the phase that we have seen
+    return lowestCutOfThePhase;
 }
 
 // Solve the minimum cut problem via submodular optimization
@@ -312,7 +383,7 @@ inline SubmodularMincutResult SubmodularMincut::solve(DynamicHypergraph &hypergr
         // Compute the ordering of the nodes in hypergraph (depending on the selected ordering type)
         orderer.compute_ordering(hypergraph, numNodes, &nodeOrdering, nullptr, nullptr);
         // Compute the cut of the phase (i.e. the cut edges when isolating the last node in the ordering)
-        CutValue cutOfThePhase = compute_cut_of_phase(hypergraph, nodeOrdering[numNodes - 1], markedEdgePins);
+        CutValue cutOfThePhase = compute_cut_of_phase(hypergraph, nodeOrdering[numNodes - 1]);
         //  Contract the last two nodes in the ordering (if possible)
         if (hypergraph.registerContraction(nodeOrdering[numNodes - 2], nodeOrdering[numNodes - 1]))
         {
@@ -321,7 +392,7 @@ inline SubmodularMincutResult SubmodularMincut::solve(DynamicHypergraph &hypergr
                 // is entirely included in the edge list of the node before it in the ordering, because then the node
                 // ordering will not change upon contraction and we can contract also the third last node in the ordering
                 // We do this over and over again until the edge lists are not entirely included anymore
-                cutOfThePhase = try_contracting_further_nodes(hypergraph, numNodes, cutOfThePhase, nodeOrdering, markedEdgePins);
+                cutOfThePhase = try_contracting_further_nodes(hypergraph, numNodes, cutOfThePhase, orderingType, nodeOrdering, markedEdgePins);
             // If the contraction could be registered, perform the contraction and decrease the number of nodes
             NodeID numContractions = hypergraph.contract(nodeOrdering[numNodes - 1]);
             numNodes -= numContractions;

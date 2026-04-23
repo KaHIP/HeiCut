@@ -12,6 +12,8 @@
 // Mt-KaHyPar header
 #include "mt-kahypar/datastructures/static_hypergraph.h"
 #include "mt-kahypar/datastructures/dynamic_hypergraph.h"
+#include "mt-kahypar/datastructures/static_graph.h"
+#include "mt-kahypar/datastructures/dynamic_graph.h"
 
 // Makros
 #ifdef SMHM_PARALLEL
@@ -88,12 +90,16 @@ typedef uint32_t EdgeIndex;
 typedef uint64_t NodeWeight;
 typedef uint64_t EdgeWeight;
 typedef uint32_t ClusterID;
+typedef uint32_t ClusterIndex;
 typedef uint32_t CutValue;
+typedef uint32_t FlowValue;
 typedef uint32_t TrimmerValue;
 typedef uint32_t IterationIndex;
 typedef size_t Fingerprint;
 typedef double ScoreValue;
 typedef mt_kahypar::ds::StaticHypergraph StaticHypergraph;
 typedef mt_kahypar::ds::DynamicHypergraph DynamicHypergraph;
+typedef mt_kahypar::ds::StaticGraph StaticGraph;
+typedef mt_kahypar::ds::DynamicGraph DynamicGraph;
 
 #endif // end of SMHM_DEFINITIONS_H
