@@ -12,9 +12,8 @@ KAHYPAR_DOWNLOAD_TBB="${KAHYPAR_DOWNLOAD_TBB:-OFF}"
 
 # ---- Paths ----------------------------------------------------
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
 
-WORK_DIR="${PROJECT_ROOT}/build-mtkahypar"
+WORK_DIR="${WORK_DIR:-${SCRIPT_DIR}/build-mtkahypar}"
 SRC_DIR="${WORK_DIR}/mt-kahypar"
 BLD_DIR="${SRC_DIR}/build"
 STAGE_DIR="${WORK_DIR}/_install"   # cmake --install prefix (for stable path)
@@ -24,6 +23,7 @@ echo ">>> Mt-KaHyPar local install"
 echo "    repo   : ${MTK_REPO}"
 echo "    commit : ${MTK_COMMIT}"
 echo "    build  : ${BUILD_TYPE}"
+echo "    work   : ${WORK_DIR}"
 echo "    dest   : ${DEST_DIR}"
 echo
 
@@ -40,6 +40,15 @@ test -d "${SRC_DIR}/external_tools" || {
   echo "!!! external_tools/ missing. Submodules not fetched correctly."
   exit 1
 }
+
+# Newer compilers reject this old growt revision because
+# migration_table_mapped_reference uses ref without declaring it.
+GROWT_ITERATOR="${SRC_DIR}/external_tools/growt/data-structures/migration_table_iterator.hpp"
+if [[ -f "${GROWT_ITERATOR}" ]] && grep -q "sref.ref.refresh()" "${GROWT_ITERATOR}" && ! grep -q "base_mapped_reference& ref;" "${GROWT_ITERATOR}"; then
+  echo ">>> Patching growt migration_table_iterator.hpp for newer compilers"
+  sed -i 's/: _tab(table), _version(ver), _mref(mref)/: _tab(table), _version(ver), _mref(mref), ref(_mref)/' "${GROWT_ITERATOR}"
+  sed -i '/base_mapped_reference _mref;/a\    base_mapped_reference\& ref;' "${GROWT_ITERATOR}"
+fi
 
 # ---- Configure & build ----------------------------------------
 mkdir -p "${BLD_DIR}"
