@@ -346,6 +346,7 @@ inline StaticHypergraph Pruner::contract_strictly_nested_isolated_substructures(
     // Get the initial number of nodes
     // NB: For static hypergraphs the length of the cluster id vector must be equal to the initial number of nodes.
     NodeIndex initialNumNodes = hypergraph.initialNumNodes();
+    NodeIndex currentNumNodes = initialNumNodes - hypergraph.numRemovedHypernodes();
 
     // Make sure that clusterID has the correct size
     assert(clusterID.size() == initialNumNodes);
@@ -383,7 +384,9 @@ inline StaticHypergraph Pruner::contract_strictly_nested_isolated_substructures(
     forAllEdgesSequentialOrParallel(hypergraph, edgeID)
     {
         // Ignore disabled hyperedges or hyperedges with only two pins (since they cannot have strictly nested isolated hyperedges with at least two pins)
-        if (!hypergraph.edgeIsEnabled(edgeID) || hypergraph.edgeSize(edgeID) <= 2)
+        if (!hypergraph.edgeIsEnabled(edgeID) ||
+            hypergraph.edgeSize(edgeID) <= 2 ||
+            hypergraph.edgeSize(edgeID) == currentNumNodes)
             continueFor;
 
 #ifdef SMHM_PARALLEL

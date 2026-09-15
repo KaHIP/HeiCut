@@ -73,6 +73,16 @@ void CanonicalDecomposition::compute_prime_decomposition_of_kernel(StaticHypergr
   NodeID splitOracleSourceID = std::numeric_limits<NodeID>::max();
   NodeID splitOracleSinkID = std::numeric_limits<NodeID>::max();
 
+  // Count how many original vertices are represented by each current kernel node.
+  std::vector<NodeIndex> numRepresentedVertices(numNodes, 0);
+  for (NodeID nodeID : decompositionTree[decompositionIndex].includedNodes)
+    numRepresentedVertices[representativeNodeID[nodeID]]++;
+  for (const MarkerEdge &markerEdge : decompositionTree[decompositionIndex].markerEdges)
+    numRepresentedVertices[markerEdge.representativeNodeID]++;
+
+  const NodeIndex totalNumRepresentedVertices =
+      std::accumulate(numRepresentedVertices.begin(), numRepresentedVertices.end(), NodeIndex{0});
+
   // Make sure that the number of decomposition elements computed so far is equal to the size of the decomposition tree
   assert(numDecompositionElements == decompositionTree.size());
 
@@ -115,7 +125,7 @@ void CanonicalDecomposition::compute_prime_decomposition_of_kernel(StaticHypergr
   // If we have not found a split yet, query the split oracle to either find a split or return a pair {s, t} of nodes for which there does not exist a (s-t)-split
   if (!hasFoundSplit)
   {
-    SplitOracleResult splitOracleResult = query_split_oracle(hypergraph);
+    SplitOracleResult splitOracleResult = query_split_oracle(hypergraph, numRepresentedVertices);
     assert(!splitOracleResult.hasFoundSplit || splitOracleResult.splitSide.size() == numNodes);
     if (splitOracleResult.hasFoundSplit)
       splitSide = std::move(splitOracleResult.splitSide);
@@ -154,7 +164,12 @@ void CanonicalDecomposition::compute_prime_decomposition_of_kernel(StaticHypergr
       }
 
     // Check if {sinkID, sourceID} is a split
-    if (sourceSinkCut == minEdgeCut)
+    NodeIndex sourceSinkSideSize = numRepresentedVertices[splitOracleSourceID] +
+                                   numRepresentedVertices[splitOracleSinkID];
+
+    if (sourceSinkCut == minEdgeCut &&
+        sourceSinkSideSize >= 2 &&
+        totalNumRepresentedVertices - sourceSinkSideSize >= 2)
     {
       // If so, a split has been found
       // NB: The split is good, because if there would be another split that crosses this split, then it would seperate the source and the sink, which is not possible

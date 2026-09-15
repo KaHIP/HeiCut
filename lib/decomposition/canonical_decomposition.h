@@ -87,7 +87,8 @@ private:
     bool verbose = false;
 
     // Query the split oracle to either find a split or return a pair {s, t} of nodes for which there does not exist a (s-t)-split
-    SplitOracleResult query_split_oracle(StaticHypergraph &hypergraph);
+    SplitOracleResult query_split_oracle(StaticHypergraph &hypergraph,
+                                         const std::vector<NodeIndex> &numRepresentedVertices);
 
     // Compute max flow on the tight graph between the last two nodes in the MA-ordering (Arikati & Melhorn)
     // NB: The trick is that we can directly use the tight ordering, as MA-ordering and tight ordering are equivalent for graphs
@@ -135,7 +136,8 @@ public:
 };
 
 // Query the split oracle to either find a split or return a pair {s, t} of nodes for which there does not exist a (s-t)-split
-inline SplitOracleResult CanonicalDecomposition::query_split_oracle(StaticHypergraph &hypergraph)
+inline SplitOracleResult CanonicalDecomposition::query_split_oracle(StaticHypergraph &hypergraph,
+                                                                    const std::vector<NodeIndex> &numRepresentedVertices)
 {
     // Get the number of nodes in the hypergraph
     const NodeID hypergraphNumNodes = hypergraph.initialNumNodes();
@@ -289,23 +291,25 @@ inline SplitOracleResult CanonicalDecomposition::query_split_oracle(StaticHyperg
     // All SCCs with a higher ID than the SCC of the sink will decrement their ID by one.
     // NB: We use the nodeOrdering mapping because sourceID and sinkID are the IDs in the tight graph, which is equal to their position in the tight ordering
     // NB2: We also directly count here how many nodes (v) of the original hypergraph are in the SCC of the source and in the SCC of the source.
-    NodeIndex numOriginalNodesInSourceComponent = 0;
-    NodeIndex numOriginalNodesInSinkComponent = 0;
+    std::vector<NodeIndex> numOriginalNodesInComponent(componentCounter, 0);
+    for (NodeID nodeID : digraph.nodes())
+        if (nodeID < hypergraphNumNodes)
+            numOriginalNodesInComponent[componentID[nodeID]] += numRepresentedVertices[nodeID];
+
     ClusterID oldSourceComponentID = componentID[nodeOrdering[sourceID]];
     ClusterID oldSinkComponentID = componentID[nodeOrdering[sinkID]];
+
+    NodeIndex numOriginalNodesInSourceComponent = numOriginalNodesInComponent[oldSourceComponentID];
+    NodeIndex numOriginalNodesInSinkComponent = numOriginalNodesInComponent[oldSinkComponentID];
 
     for (NodeID nodeID : digraph.nodes())
         if (componentID[nodeID] == oldSinkComponentID)
         {
-            if (nodeID < hypergraphNumNodes)
-                numOriginalNodesInSinkComponent++;
             // Assign the highest ID to the SCC of the sink
             componentID[nodeID] = componentCounter - 1;
         }
         else
         {
-            if (nodeID < hypergraphNumNodes && componentID[nodeID] == oldSourceComponentID)
-                numOriginalNodesInSourceComponent++;
             // Decrease the ID of the SCCs that were higher than the SCC of the sink
             if (componentID[nodeID] > oldSinkComponentID)
                 componentID[nodeID]--;
